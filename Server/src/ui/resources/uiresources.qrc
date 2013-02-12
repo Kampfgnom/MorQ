@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/sideBar">
+        <file alias="button_background_p">sideBar/button_background_p.png</file>
+        <file alias="button_background_nc">sideBar/button_background_nc.png</file>
+        <file alias="button_background_c">sideBar/button_background_c.png</file>
+    </qresource>
+    <qresource prefix="/statusBar">
+        <file alias="background">statusBar/background.png</file>
+    </qresource>
+</RCC>

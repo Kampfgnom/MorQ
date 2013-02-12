@@ -7,13 +7,15 @@ SUBDIRS     =   QDataSuite \
                 Server
 
 
-QDataSuite.subdir           =  lib/QDataSuite
+QDataSuite.subdir           =   lib/QDataSuite
 
-QSerienJunkies.subdir       =  lib/QSerienJunkies
+QSerienJunkies.subdir       =   lib/QSerienJunkies
 
-QShareHosterDownload.subdir =  lib/QShareHosterDownload
+QShareHosterDownload.subdir =   lib/QShareHosterDownload
 
-Server.subdir               =  Server
-Server.depends              =  QDataSuite \
-                               QSerienJunkies \
-                               QShareHosterDownload
+Server.subdir               =   Server
+Server.depends              =   QDataSuite \
+                                QSerienJunkies \
+                                QShareHosterDownload
+
+include(Model/Model.pri)

@@ -19,6 +19,8 @@ include($$QSHAREHOSTERDOWNLOAD_PATH/QShareHosterDownload.pri)
 QSERIENJUNKIES_PATH = $$LIBPATH/QSerienJunkies
 include($$QSERIENJUNKIES_PATH/QSerienJunkies.pri)
 
+include(../../Model/Model.pri)
+
 ### General config ###
 
 TARGET          = MorQServer
@@ -27,7 +29,6 @@ TEMPLATE        = app
 QT              += sql widgets network xml
 CONFIG          += c++11
 QMAKE_CXXFLAGS  += $$QDATASUITE_COMMON_QMAKE_CXXFLAGS
-
 
 ### QDataSuite ###
 
@@ -67,7 +68,24 @@ INCLUDEPATH     += $$QHAL_INCLUDEPATH
 
 ### Files ###
 
-HEADERS +=
+HEADERS += \
+    ui/mainwindow/mainwindow.h \
+    controller/downloadcontroller.h \
+    model/downloadsitemmodel.h \
+    ui/mainwindow/downloadspage.h \
+    controller/controller.h
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    ui/mainwindow/mainwindow.cpp \
+    controller/downloadcontroller.cpp \
+    model/downloadsitemmodel.cpp \
+    ui/mainwindow/downloadspage.cpp \
+    controller/controller.cpp
+
+FORMS += \
+    ui/mainwindow/mainwindow.ui \
+    ui/mainwindow/downloadspage.ui
+
+RESOURCES += \
+    ui/resources/uiresources.qrc
 
