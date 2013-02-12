@@ -1,0 +1,9 @@
+[submodule "lib/QDataSuite"]
+	path = lib/QDataSuite
+	url = /Users/niklaswulf/Development/QDataSuite/QDataSuite
+[submodule "lib/QSerienJunkies"]
+	path = lib/QSerienJunkies
+	url = /Users/niklaswulf/Development/QSerienJunkies/QSerienJunkies
+[submodule "lib/QShareHosterDownload"]
+	path = lib/QShareHosterDownload
+	url = /Users/niklaswulf/Development/QShareHosterDownload/QShareHosterDownload
