@@ -1,5 +1,7 @@
 #include "downloadcontroller.h"
 
+#include "preferences.h"
+
 #include <download.h>
 
 #include <qdownload.h>
@@ -28,8 +30,8 @@ DownloadController::DownloadController(QObject *parent) :
     m_model = new DownloadsItemModel(m_dao, this);
 
     PremuimizeMeHoster *premiumizeMe = new PremuimizeMeHoster(this);
-    premiumizeMe->setUserName("asd");
-    premiumizeMe->setPassword("asdf");
+    premiumizeMe->setUserName(Preferences::premiumizeMeUserName());
+    premiumizeMe->setPassword(Preferences::premiumizeMeUserPassword());
     m_shareHosters.append(premiumizeMe);
 
     m_updateTimer.setInterval(1000);
@@ -102,6 +104,7 @@ void DownloadController::metaDataChanged()
     }
 
     download->setParent(this);
+    download->setRedirectedUrl(qDownload->redirectedUrl());
     download->setUrl(qDownload->url());
     download->setFileName(qDownload->fileName());
     download->setFileSize(qDownload->fileSize());
@@ -112,7 +115,6 @@ void DownloadController::metaDataChanged()
     else {
         m_dao->insert(download);
         m_downloads.insert(qDownload, download);
-        qDownload->startDownload();
     }
 }
 

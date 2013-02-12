@@ -29,6 +29,7 @@ TEMPLATE        = app
 QT              += sql widgets network xml
 CONFIG          += c++11
 QMAKE_CXXFLAGS  += $$QDATASUITE_COMMON_QMAKE_CXXFLAGS
+DEFINES         += "VERSION=\"$$VERSION\""
 
 ### QDataSuite ###
 
@@ -73,18 +74,23 @@ HEADERS += \
     controller/downloadcontroller.h \
     model/downloadsitemmodel.h \
     ui/mainwindow/downloadspage.h \
-    controller/controller.h
+    controller/controller.h \
+    ui/preferences/preferenceswindow.h \
+    preferences.h
 
 SOURCES += main.cpp \
     ui/mainwindow/mainwindow.cpp \
     controller/downloadcontroller.cpp \
     model/downloadsitemmodel.cpp \
     ui/mainwindow/downloadspage.cpp \
-    controller/controller.cpp
+    controller/controller.cpp \
+    ui/preferences/preferenceswindow.cpp \
+    preferences.cpp
 
 FORMS += \
     ui/mainwindow/mainwindow.ui \
-    ui/mainwindow/downloadspage.ui
+    ui/mainwindow/downloadspage.ui \
+    ui/preferences/preferenceswindow.ui
 
 RESOURCES += \
     ui/resources/uiresources.qrc

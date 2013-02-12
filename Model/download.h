@@ -14,6 +14,7 @@ class Download : public QObject
     Q_OBJECT
     Q_PROPERTY(int id READ id WRITE setId)
     Q_PROPERTY(QUrl url READ url WRITE setUrl)
+    Q_PROPERTY(QUrl redirectedUrl READ redirectedUrl WRITE setRedirectedUrl)
     Q_PROPERTY(QString destinationFolder READ destinationFolder WRITE setDestinationFolder)
     Q_PROPERTY(QString fileName READ fileName WRITE setFileName)
     Q_PROPERTY(QString message READ message WRITE setMessage)
@@ -30,7 +31,10 @@ public:
     int id() const;
     
     QUrl url() const;
-    void setUrl(const QUrl &url);
+    void setUrl(const QUrl &redirectedUrl);
+
+    QUrl redirectedUrl() const;
+    void setRedirectedUrl(const QUrl &redirectedUrl);
 
     QString destinationFolder() const;
     void setDestinationFolder(const QString &destinationFolder);
@@ -47,6 +51,8 @@ public:
     int bytesDownloaded() const;
     void setBytesDownloaded(int bytes);
 
+    double progress() const;
+
     bool isFinished();
 
     int speed() const;
@@ -61,6 +67,7 @@ private:
 
     int m_id;
     QUrl m_url;
+    QUrl m_redirectedUrl;
     QString m_destinationFolder;
     QString m_fileName;
     int m_fileSize;

@@ -8,7 +8,7 @@ float Download::s_speedAlpha(0.1);
 Download::Download(QObject *parent) :
     QObject(parent),
     m_id(0),
-    m_url(QUrl()),
+    m_redirectedUrl(QUrl()),
     m_destinationFolder(QString()),
     m_fileName(QString()),
     m_fileSize(-1),
@@ -25,11 +25,6 @@ int Download::id() const
     return m_id;
 }
 
-void Download::setId(int id)
-{
-    m_id = id;
-}
-
 QUrl Download::url() const
 {
     return m_url;
@@ -38,6 +33,21 @@ QUrl Download::url() const
 void Download::setUrl(const QUrl &url)
 {
     m_url = url;
+}
+
+void Download::setId(int id)
+{
+    m_id = id;
+}
+
+QUrl Download::redirectedUrl() const
+{
+    return m_redirectedUrl;
+}
+
+void Download::setRedirectedUrl(const QUrl &url)
+{
+    m_redirectedUrl = url;
 }
 
 
@@ -89,6 +99,11 @@ int Download::bytesDownloaded() const
 void Download::setBytesDownloaded(int bytes)
 {
     m_bytesDownloaded = bytes;
+}
+
+double Download::progress() const
+{
+    return double(m_bytesDownloaded) / double(m_fileSize);
 }
 
 bool Download::isFinished()

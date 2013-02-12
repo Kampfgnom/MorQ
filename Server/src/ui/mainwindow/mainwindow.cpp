@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "ui/preferences/preferenceswindow.h"
+
 #include <QLabel>
 #include <QSettings>
 
@@ -9,6 +11,7 @@ MainWindow *MainWindow::s_instance = 0;
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
+    m_preferencesWindow(nullptr),
     m_movieBusy(QLatin1String(":animations/busy_small"))
 {
     ui->setupUi(this);
@@ -80,4 +83,18 @@ void MainWindow::on_actionDownloads_triggered()
     ui->centralStackedWidget->setCurrentWidget(ui->downloadsPage);
 
     // TODO: disable other actions/buttons
+}
+
+void MainWindow::on_actionPreferences_triggered()
+{
+    if(!m_preferencesWindow) {
+        m_preferencesWindow = new PreferencesWindow;
+        connect(m_preferencesWindow, &QObject::destroyed, [&]() {
+            m_preferencesWindow = nullptr;
+        });
+    }
+
+    m_preferencesWindow->raise();
+    m_preferencesWindow->activateWindow();
+    m_preferencesWindow->show();
 }

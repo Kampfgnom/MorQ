@@ -6,8 +6,10 @@
 #include <QDataSuite/metaobject.h>
 #include <QDataSuite/metaproperty.h>
 
+#include <QFileIconProvider>
 #include <QDebug>
 #include <QTime>
+#include <QTemporaryFile>
 
 DownloadsItemModel::DownloadsItemModel(QDataSuite::AbstractDataAccessObject *dao, QObject *parent) :
     QAbstractItemModel(parent),
@@ -39,29 +41,58 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
     Download *dl = download(index);
 
     if(!index.parent().isValid()) {
+        double speed = 0.0;
+        double weightedSpeed = 0.0;
+        double progress = 0.0;
         if(role == Qt::DisplayRole) {
             switch(index.column()) {
             case FileNameColumn:
                 return dl->fileName();
+
             case ProgressColumn:
-                return QString("%1 %")
-                        .arg(QString::number(100.0 * float(dl->bytesDownloaded()) / float(dl->fileSize()),
-                                             'f',
-                                             2));
+                progress = 100.0 * dl->progress() + 0.000001; // ensure, that it is positive
+                return QString("%1 %").arg(QString::number(progress, 'f', 2));
+
             case SpeedColumn:
-                return QString("%1 KB/s")
-                        .arg(QString::number(float(dl->speed()) / 1000.0,
-                                             'f',
-                                             2));
+                speed = double(dl->speed() / 1000.0);
+                if(qFuzzyIsNull(speed))
+                    return QVariant();
+
+                return QString("%1 KB/s").arg(QString::number(speed,'f',2));
+
             case SpeedWeightedColumn:
-                return QString("%1 KB/s")
-                        .arg(QString::number(float(dl->speedWeighted()) / 1000.0,
-                                             'f',
-                                             2));
+                weightedSpeed = double(dl->speedWeighted() / 1000.0);
+                if(qFuzzyIsNull(speed))
+                    return QVariant();
+
+                return QString("%1 KB/s").arg(QString::number(weightedSpeed,'f',2));
+
             case EtaColumn:
                 return dl->eta().toString("hh:mm:ss");
+
             case UrlColumn:
                 return dl->url();
+
+            case RedirectedUrlColumn:
+                return dl->redirectedUrl();
+
+            default:
+                break;
+            }
+        }
+        else if(role == Qt::DecorationRole) {
+
+            static QFileIconProvider provider;
+            // TODO: This might be slow.
+            QTemporaryFile file(QString("XXXXXX").append(dl->fileName())); // XXXXXX so that QTemporaryFile does not append these
+                                                                           // which would overwrite the original extension
+            file.open(); // Open, because QFileIconProvider only works for existing files... This little fucker
+            QFileInfo info(file);
+            QIcon icon = provider.icon(info);
+
+            switch(index.column()) {
+            case FileNameColumn:
+                return icon;
             default:
                 break;
             }
@@ -90,6 +121,8 @@ QVariant DownloadsItemModel::headerData(int section, Qt::Orientation orientation
             return QVariant("ETA");
         case UrlColumn:
             return QVariant("Url");
+        case RedirectedUrlColumn:
+            return QVariant("Redirected");
         default:
             break;
         }
@@ -108,16 +141,23 @@ int DownloadsItemModel::rowCount(const QModelIndex &parent) const
 
 int DownloadsItemModel::columnCount(const QModelIndex &parent) const
 {
-    return 6;
+    if(parent.isValid())
+        return 0;
+
+    return 7;
 }
 
 QModelIndex DownloadsItemModel::parent(const QModelIndex &child) const
 {
+    Q_UNUSED(child)
     return QModelIndex();
 }
 
 QModelIndex DownloadsItemModel::index(int row, int column, const QModelIndex &parent) const
 {
+    if(parent.isValid())
+        return QModelIndex();
+
     return createIndex(row, column);
 }
 

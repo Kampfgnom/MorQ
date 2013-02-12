@@ -19,7 +19,8 @@ public:
         SpeedColumn,
         SpeedWeightedColumn,
         EtaColumn,
-        UrlColumn
+        UrlColumn,
+        RedirectedUrlColumn
     };
 
     explicit DownloadsItemModel(QDataSuite::AbstractDataAccessObject *dao, QObject *parent = 0);

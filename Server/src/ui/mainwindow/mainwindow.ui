@@ -218,7 +218,14 @@ background-color: rgb(227,227,227);
     <addaction name="separator"/>
     <addaction name="actionDownloads"/>
    </widget>
+   <widget class="QMenu" name="menuExtras">
+    <property name="title">
+     <string>Extras</string>
+    </property>
+    <addaction name="actionPreferences"/>
+   </widget>
    <addaction name="menuView"/>
+   <addaction name="menuExtras"/>
   </widget>
   <widget class="QStatusBar" name="statusbar">
    <property name="minimumSize">
@@ -246,6 +253,14 @@ background-color: rgb(227,227,227);
    </property>
    <property name="shortcut">
     <string>Ctrl+1</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+P</string>
    </property>
   </action>
  </widget>

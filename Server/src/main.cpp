@@ -7,6 +7,10 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+    QApplication::setApplicationName("MorQServer");
+    QApplication::setOrganizationName("LBProductions");
+    QApplication::setApplicationVersion("VERSION");
+
     Controller::initialize();
     MainWindow::instance()->show();
 
