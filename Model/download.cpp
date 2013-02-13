@@ -13,6 +13,7 @@ Download::Download(QObject *parent) :
     m_fileName(QString()),
     m_fileSize(-1),
     m_bytesDownloaded(-1),
+    m_package(nullptr),
     m_speed(-1),
     m_weightedSpeed(-1),
     m_speedTimer(QElapsedTimer()),
@@ -81,6 +82,16 @@ void Download::setMessage(const QString &message)
     m_message = message;
 }
 
+DownloadPackage *Download::package() const
+{
+    return m_package;
+}
+
+void Download::setPackage(DownloadPackage *package)
+{
+    m_package = package;
+}
+
 int Download::fileSize() const
 {
     return m_fileSize;
@@ -103,6 +114,10 @@ void Download::setBytesDownloaded(int bytes)
 
 double Download::progress() const
 {
+    if(m_bytesDownloaded <= 0
+            || m_fileSize <= 0)
+        return 0.0;
+
     return double(m_bytesDownloaded) / double(m_fileSize);
 }
 

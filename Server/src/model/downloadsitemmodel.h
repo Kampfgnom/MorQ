@@ -19,11 +19,14 @@ public:
         SpeedColumn,
         SpeedWeightedColumn,
         EtaColumn,
+        MessageColumn,
         UrlColumn,
         RedirectedUrlColumn
     };
 
-    explicit DownloadsItemModel(QDataSuite::AbstractDataAccessObject *dao, QObject *parent = 0);
+    explicit DownloadsItemModel(QDataSuite::AbstractDataAccessObject *downloadFoldersDao,
+                                QDataSuite::AbstractDataAccessObject *downloadsDao,
+                                QObject *parent = 0);
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant data(const QModelIndex &index, int role) const;
@@ -35,12 +38,13 @@ public:
     QModelIndex index(int row, int column, const QModelIndex &parent) const;
 
 private slots:
-    void insertObject(QObject *object);
-    void updateObject(QObject *object);
-    void removeObject(QObject *object);
+    void insertDownload(QObject *object);
+    void updateDownload(QObject *object);
+    void removeDownload(QObject *object);
 
 private:
-    QDataSuite::AbstractDataAccessObject *m_dao;
+    QDataSuite::AbstractDataAccessObject *m_downloadDao;
+    QDataSuite::AbstractDataAccessObject *m_downloadFoldersDao;
     QList<Download *> m_cache;
 
     Download *download(const QModelIndex &index) const;

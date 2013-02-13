@@ -13,9 +13,6 @@ include($$QRESTSERVER_PATH/QRestServer.pri)
 QHAL_PATH = $$QRESTSERVER_PATH/lib/QHal
 include($$QHAL_PATH/QHal.pri)
 
-QSHAREHOSTERDOWNLOAD_PATH = $$LIBPATH/QShareHosterDownload
-include($$QSHAREHOSTERDOWNLOAD_PATH/QShareHosterDownload.pri)
-
 QSERIENJUNKIES_PATH = $$LIBPATH/QSerienJunkies
 include($$QSERIENJUNKIES_PATH/QSerienJunkies.pri)
 
@@ -41,12 +38,6 @@ LIBS            += $$QDATASUITE_LIBS
 
 INCLUDEPATH     += $$QPERSISTENCE_INCLUDEPATH
 LIBS            += $$QPERSISTENCE_LIBS
-
-
-### QShareHosterDownload ###
-
-LIBS            += $$QSHAREHOSTERDOWNLOAD_LIBS
-INCLUDEPATH     += $$QSHAREHOSTERDOWNLOAD_INCLUDEPATH
 
 
 ### QSerienJunkies ###
@@ -76,7 +67,12 @@ HEADERS += \
     ui/mainwindow/downloadspage.h \
     controller/controller.h \
     ui/preferences/preferenceswindow.h \
-    preferences.h
+    preferences.h \
+    controller/plugincontroller.h \
+    plugins/hoster/hosterplugin.h \
+    plugins/hoster/premiumizemeplugin.h \
+    controller/downloader.h \
+    controller/linkscontroller.h
 
 SOURCES += main.cpp \
     ui/mainwindow/mainwindow.cpp \
@@ -85,7 +81,12 @@ SOURCES += main.cpp \
     ui/mainwindow/downloadspage.cpp \
     controller/controller.cpp \
     ui/preferences/preferenceswindow.cpp \
-    preferences.cpp
+    preferences.cpp \
+    controller/plugincontroller.cpp \
+    plugins/hoster/hosterplugin.cpp \
+    plugins/hoster/premiumizemeplugin.cpp \
+    controller/downloader.cpp \
+    controller/linkscontroller.cpp
 
 FORMS += \
     ui/mainwindow/mainwindow.ui \

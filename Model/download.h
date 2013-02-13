@@ -9,6 +9,8 @@
 #include <QUrl>
 #include <QTime>
 
+class DownloadPackage;
+
 class Download : public QObject
 {
     Q_OBJECT
@@ -18,12 +20,15 @@ class Download : public QObject
     Q_PROPERTY(QString destinationFolder READ destinationFolder WRITE setDestinationFolder)
     Q_PROPERTY(QString fileName READ fileName WRITE setFileName)
     Q_PROPERTY(QString message READ message WRITE setMessage)
+    Q_PROPERTY(DownloadPackage* package READ package WRITE setPackage)
     Q_PROPERTY(int fileSize READ fileSize WRITE setFileSize)
     Q_PROPERTY(int bytesDownloaded READ bytesDownloaded WRITE setBytesDownloaded)
 
     Q_CLASSINFO(QDATASUITE_PRIMARYKEY, "id")
     Q_CLASSINFO("QDATASUITE_PROPERTYMETADATA:id",
                 "autoincremented=true;")
+    Q_CLASSINFO("QDATASUITE_PROPERTYMETADATA:package",
+                "reverserelation=downloads;")
 
 public:
     explicit Download(QObject *parent = 0);
@@ -45,6 +50,8 @@ public:
     QString message() const;
     void setMessage(const QString &message);
 
+    DownloadPackage *package() const;
+
     int fileSize() const;
     void setFileSize(int bytes);
 
@@ -62,6 +69,7 @@ public:
 
 private:
     void setId(int id);
+    void setPackage(DownloadPackage *package);
 
     void calculateSpeed() const;
 
@@ -73,6 +81,7 @@ private:
     int m_fileSize;
     int m_bytesDownloaded;
     QString m_message;
+    DownloadPackage *m_package;
 
     mutable int m_speed;
     mutable int m_weightedSpeed;

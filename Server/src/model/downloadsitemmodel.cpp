@@ -11,18 +11,19 @@
 #include <QTime>
 #include <QTemporaryFile>
 
-DownloadsItemModel::DownloadsItemModel(QDataSuite::AbstractDataAccessObject *dao, QObject *parent) :
+DownloadsItemModel::DownloadsItemModel(QDataSuite::AbstractDataAccessObject *downloadFoldersDao, QDataSuite::AbstractDataAccessObject *downloadsDao, QObject *parent) :
     QAbstractItemModel(parent),
-    m_dao(dao)
+    m_downloadDao(downloadsDao),
+    m_downloadFoldersDao(downloadFoldersDao)
 {
-    connect(m_dao, &QDataSuite::AbstractDataAccessObject::objectInserted,
-            this, &DownloadsItemModel::insertObject);
-    connect(m_dao, &QDataSuite::AbstractDataAccessObject::objectUpdated,
-            this, &DownloadsItemModel::updateObject);
-    connect(m_dao, &QDataSuite::AbstractDataAccessObject::objectRemoved,
-            this, &DownloadsItemModel::removeObject);
+    connect(m_downloadDao, &QDataSuite::AbstractDataAccessObject::objectInserted,
+            this, &DownloadsItemModel::insertDownload);
+    connect(m_downloadDao, &QDataSuite::AbstractDataAccessObject::objectUpdated,
+            this, &DownloadsItemModel::updateDownload);
+    connect(m_downloadDao, &QDataSuite::AbstractDataAccessObject::objectRemoved,
+            this, &DownloadsItemModel::removeDownload);
 
-    foreach(QObject *object, m_dao->readAllObjects()) {
+    foreach(QObject *object, m_downloadDao->readAllObjects()) {
         Download *download = static_cast<Download *>(object);
         m_cache.append(download);
     }
@@ -50,7 +51,7 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
                 return dl->fileName();
 
             case ProgressColumn:
-                progress = 100.0 * dl->progress() + 0.000001; // ensure, that it is positive
+                progress = qAbs(100.0 * dl->progress()); // ensure, that it is positive. Damn doubles
                 return QString("%1 %").arg(QString::number(progress, 'f', 2));
 
             case SpeedColumn:
@@ -69,6 +70,9 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
 
             case EtaColumn:
                 return dl->eta().toString("hh:mm:ss");
+
+            case MessageColumn:
+                return dl->message();
 
             case UrlColumn:
                 return dl->url();
@@ -119,6 +123,8 @@ QVariant DownloadsItemModel::headerData(int section, Qt::Orientation orientation
             return QVariant("Av.Speed");
         case EtaColumn:
             return QVariant("ETA");
+        case MessageColumn:
+            return QVariant("Message");
         case UrlColumn:
             return QVariant("Url");
         case RedirectedUrlColumn:
@@ -161,7 +167,7 @@ QModelIndex DownloadsItemModel::index(int row, int column, const QModelIndex &pa
     return createIndex(row, column);
 }
 
-void DownloadsItemModel::insertObject(QObject *object)
+void DownloadsItemModel::insertDownload(QObject *object)
 {
     beginInsertRows(QModelIndex(), m_cache.size(), m_cache.size());
     Download *insertedDownload = static_cast<Download *>(object);
@@ -169,7 +175,7 @@ void DownloadsItemModel::insertObject(QObject *object)
     endInsertRows();
 }
 
-void DownloadsItemModel::updateObject(QObject *object)
+void DownloadsItemModel::updateDownload(QObject *object)
 {
     Download *updatedDownload = static_cast<Download *>(object);
     QVariant key = primaryKey(updatedDownload);
@@ -177,6 +183,12 @@ void DownloadsItemModel::updateObject(QObject *object)
     int i = 0;
     while(it.hasNext()) {
         it.next();
+        if(it.value() == object) {
+            emit dataChanged(index(i, 0,QModelIndex()),
+                             index(i, columnCount(QModelIndex()),QModelIndex()));
+            return;
+        }
+
         if(primaryKey(it.value()) == key) {
             it.remove();
             it.insert(updatedDownload);
@@ -188,7 +200,7 @@ void DownloadsItemModel::updateObject(QObject *object)
     }
 }
 
-void DownloadsItemModel::removeObject(QObject *object)
+void DownloadsItemModel::removeDownload(QObject *object)
 {
     Download *removedDownload = static_cast<Download *>(object);
     QVariant key = primaryKey(removedDownload);
@@ -196,7 +208,8 @@ void DownloadsItemModel::removeObject(QObject *object)
     int i = 0;
     while(it.hasNext()) {
         it.next();
-        if(primaryKey(it.value()) == key) {
+        if(it.value() == object
+                || primaryKey(it.value()) == key) {
             beginRemoveRows(QModelIndex(), i, i);
             it.remove();
             endRemoveRows();
@@ -213,6 +226,6 @@ Download *DownloadsItemModel::download(const QModelIndex &index) const
 
 QVariant DownloadsItemModel::primaryKey(Download *download) const
 {
-    QDataSuite::MetaProperty keyProperty = m_dao->dataSuiteMetaObject().primaryKeyProperty();
+    QDataSuite::MetaProperty keyProperty = m_downloadDao->dataSuiteMetaObject().primaryKeyProperty();
     return keyProperty.read(download);
 }

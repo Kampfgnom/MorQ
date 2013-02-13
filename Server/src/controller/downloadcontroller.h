@@ -3,18 +3,17 @@
 
 #include <QObject>
 
-#include <QClipboard>
-#include <QTimer>
-
 #include "controller.h"
 #include "model/downloadsitemmodel.h"
 
-namespace QPersistence {
-template<class T>
-class PersistentDataAccessObject;
-}
+#include <download.h>
+#include <downloadpackage.h>
+
+#include <QClipboard>
+#include <QTimer>
 
 class Download;
+class DownloadPackage;
 class QDownload;
 class QShareHoster;
 
@@ -27,22 +26,11 @@ public:
     DownloadsItemModel *model() const;
 
 private slots:
-    void clipboardChanged();
-    void metaDataChanged();
-    void downloadError();
-    void updateDownloads();
 
 private:
     friend class Controller;
     explicit DownloadController(QObject *parent = 0);
-
-    QPersistence::PersistentDataAccessObject<Download> *m_dao;
     DownloadsItemModel *m_model;
-
-    QList<QShareHoster *> m_shareHosters;
-    QHash<QDownload *, Download *> m_downloads;
-
-    QTimer m_updateTimer;
 
     Q_DISABLE_COPY(DownloadController)
 };
