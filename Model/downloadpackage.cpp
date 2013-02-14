@@ -1,5 +1,7 @@
 #include "downloadpackage.h"
 
+#include "download.h"
+
 #include <QTime>
 #include <QDebug>
 
@@ -45,6 +47,16 @@ void DownloadPackage::setMessage(const QString &message)
     m_message = message;
 }
 
+QUrl DownloadPackage::sourceUrl() const
+{
+    return m_sourceUrl;
+}
+
+void DownloadPackage::setSourceUrl(const QUrl &url)
+{
+    m_sourceUrl = url;
+}
+
 QList<Download *> DownloadPackage::downloads() const
 {
     return m_downloads;
@@ -52,7 +64,29 @@ QList<Download *> DownloadPackage::downloads() const
 
 void DownloadPackage::addDownload(Download *download)
 {
+    download->setPackage(this);
     m_downloads.append(download);
+}
+
+QByteArray DownloadPackage::captcha() const
+{
+    return m_captcha;
+}
+
+void DownloadPackage::setCaptcha(const QByteArray &captcha)
+{
+    m_captcha = captcha;
+}
+
+QString DownloadPackage::captchaString() const
+{
+    return m_captchaString;
+}
+
+void DownloadPackage::setCaptchaString(const QString &string)
+{
+    m_captchaString = string;
+    emit captchaStringChanged();
 }
 
 void DownloadPackage::setDownloads(const QList<Download *> downloads)
@@ -74,7 +108,13 @@ int DownloadPackage::bytesDownloaded() const
 
 double DownloadPackage::progress() const
 {
-    return double(bytesDownloaded()) / double(totalFileSize());
+    int byteDown = bytesDownloaded();
+    int total = totalFileSize();
+    if(byteDown <= 0
+            || total <= 0)
+        return 0.0;
+
+    return double(byteDown) / double(total);
 }
 
 bool DownloadPackage::isFinished()

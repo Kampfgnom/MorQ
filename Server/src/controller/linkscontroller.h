@@ -4,6 +4,7 @@
 #include <QObject>
 
 class Download;
+class DownloadPackage;
 
 class LinksController : public QObject
 {
@@ -11,11 +12,13 @@ class LinksController : public QObject
 public:
     explicit LinksController(QObject *parent = 0);
 
+    Download *createDownload(const QUrl &url);
+    DownloadPackage *createPackage(const QUrl &url);
+
 private slots:
     void clipboardChanged();
+    void packageFinished(DownloadPackage *package);
 
-private:
-    Download *createDownload(const QUrl &url);
 };
 
 #endif // LINKSCONTROLLER_H

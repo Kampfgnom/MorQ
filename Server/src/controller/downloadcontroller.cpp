@@ -3,9 +3,7 @@
 DownloadController::DownloadController(QObject *parent) :
     QObject(parent)
 {
-    m_model = new DownloadsItemModel(Controller::downloadPackagesDao(),
-                                     Controller::downloadsDao(),
-                                     this);
+    m_model = new DownloadsItemModel(this);
 }
 
 DownloadsItemModel *DownloadController::model() const

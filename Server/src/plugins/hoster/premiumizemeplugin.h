@@ -30,7 +30,6 @@ class PremiumizeMeDownloadHandler : public QObject
 {
     Q_OBJECT
 public:
-    friend class PremuimizeMePlugin;
     PremiumizeMeDownloadHandler(Download *download, PremuimizeMePlugin *parent);
     void getDownloadInformation();
     void download();

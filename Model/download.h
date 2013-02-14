@@ -68,6 +68,8 @@ public:
 
 
 private:
+    friend class DownloadPackage;
+
     void setId(int id);
     void setPackage(DownloadPackage *package);
 

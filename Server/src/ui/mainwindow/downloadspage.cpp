@@ -1,6 +1,8 @@
 #include "downloadspage.h"
 #include "ui_downloadspage.h"
 
+#include "downloadsitemdelegate.h"
+
 #include "controller/downloadcontroller.h"
 
 DownloadsPage::DownloadsPage(QWidget *parent) :
@@ -11,6 +13,7 @@ DownloadsPage::DownloadsPage(QWidget *parent) :
 
     ui->downloadsTreeView->setAttribute(Qt::WA_MacShowFocusRect, false);
     ui->downloadsTreeView->setModel(Controller::downloads()->model());
+    ui->downloadsTreeView->setItemDelegateForColumn(DownloadsItemModel::UserInputColumn, new DownloadsItemDelegate(this));
 }
 
 DownloadsPage::~DownloadsPage()
