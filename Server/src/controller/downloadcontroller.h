@@ -13,9 +13,14 @@ class DownloadController : public QObject
     Q_OBJECT
 public:
     void startDownloads();
+    void stopDownloads();
     void stopDownload(Download *download);
     void removeDownload(Download *download);
     void removePackage(DownloadPackage *package);
+    void resetDownload(Download *download);
+    void resetPackage(DownloadPackage *package);
+
+    bool isDownloadRunning();
 
 private:
     friend class Controller;
@@ -25,7 +30,8 @@ private:
 
     Download *findNextUnfinishedDownload();
 
-    QHash<int, Downloader *> m_runningDownloads;
+    QList<Download *> m_runningDownloads;
+    QHash<int, Downloader *> m_runningDownloaders;
 
     Q_DISABLE_COPY(DownloadController)
 };

@@ -165,6 +165,7 @@ void MainWindow::on_actionStart_triggered()
 
 void MainWindow::on_actionDeleteDownload_triggered()
 {
+    // TODO: confirmation
 //    QMessageBox confirmDialog(this);
 //    confirmDialog.setText(tr("Do you really want to remove the selected downloads?"));
 //    confirmDialog.setWindowTitle(tr("Confirm remove"));
@@ -207,5 +208,33 @@ void MainWindow::on_actionDeleteDownload_triggered()
     foreach(DownloadPackage *package, selectedPackages) {
         if(package)
             Controller::downloads()->removePackage(package);
+    }
+}
+
+void MainWindow::on_actionResetDownload_triggered()
+{
+    // TODO: confirmation
+    QModelIndexList list = ui->treeViewDownloads->selectionModel()->selectedRows();
+
+    QList<Download *> selectedDownloads;
+    QList<DownloadPackage *> selectedPackages;
+
+    foreach(QModelIndex index, list) {
+        if(index.parent().isValid()) {
+            selectedDownloads.append(m_downloadsModel->downloadByIndex(index));
+        }
+        else if(!index.parent().isValid()) {
+            selectedPackages.append(m_downloadsModel->packageByIndex(index));
+        }
+    }
+
+    foreach(Download *dl, selectedDownloads) {
+        if(dl)
+            Controller::downloads()->resetDownload(dl);
+    }
+
+    foreach(DownloadPackage *package, selectedPackages) {
+        if(package)
+            Controller::downloads()->resetPackage(package);
     }
 }

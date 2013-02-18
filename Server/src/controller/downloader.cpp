@@ -68,6 +68,8 @@ qint64 DownloaderData::BUFFERSIZE = (2 << 18);
 
 Downloader::~Downloader()
 {
+    if(data->reply)
+        data->reply->disconnect();
     abortDownload();
 }
 

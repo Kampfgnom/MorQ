@@ -41,6 +41,8 @@ private slots:
 
     void on_actionDeleteDownload_triggered();
 
+    void on_actionResetDownload_triggered();
+
 private:
     static MainWindow *s_instance;
     explicit MainWindow(QWidget *parent = 0);

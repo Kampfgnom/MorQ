@@ -36,6 +36,8 @@ public:
     ~Download();
 
     int id() const;
+
+    void reset();
     
     QUrl url() const;
     void setUrl(const QUrl &redirectedUrl);

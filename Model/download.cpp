@@ -34,6 +34,19 @@ int Download::id() const
     return m_id;
 }
 
+void Download::reset()
+{
+    m_redirectedUrl = QUrl();
+    m_destinationFolder = QString();
+    m_fileName = QString();
+    m_fileSize = -1;
+    m_bytesDownloaded = -1;
+    m_enabled = true;
+    m_speed = 0;
+    m_weightedSpeed = 0;
+    m_bytesDownloadedAtLastSpeedMeasurement = -1;
+}
+
 QUrl Download::url() const
 {
     return m_url;
