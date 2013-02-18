@@ -58,6 +58,9 @@ public:
     qint64 bytesDownloaded() const;
     void setBytesDownloaded(qint64 bytes);
 
+    bool isEnabled() const;
+    void setEnabled(bool isEnabled);
+
     double progress() const;
 
     bool isFinished() const;
@@ -68,6 +71,7 @@ public:
 
 signals:
     void finished();
+    void enabled(bool);
 
 private:
     friend class DownloadPackage;
@@ -86,6 +90,7 @@ private:
     qint64 m_bytesDownloaded;
     QString m_message;
     DownloadPackage *m_package;
+    bool m_enabled;
 
     mutable qint64 m_speed;
     mutable qint64 m_weightedSpeed;

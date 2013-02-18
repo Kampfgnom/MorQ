@@ -14,6 +14,7 @@ Download::Download(QObject *parent) :
     m_fileSize(-1),
     m_bytesDownloaded(-1),
     m_package(nullptr),
+    m_enabled(true),
     m_speed(0),
     m_weightedSpeed(0),
     m_speedTimer(QElapsedTimer()),
@@ -113,6 +114,17 @@ void Download::setBytesDownloaded(qint64 bytes)
 
     if(isFinished())
         emit finished();
+}
+
+bool Download::isEnabled() const
+{
+    return m_enabled;
+}
+
+void Download::setEnabled(bool e)
+{
+    m_enabled = e;
+    emit enabled(e);
 }
 
 double Download::progress() const

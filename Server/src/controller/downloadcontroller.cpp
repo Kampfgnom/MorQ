@@ -25,7 +25,8 @@ Download *DownloadController::findNextUnfinishedDownload()
 
         foreach(Download *dl , package->downloads()) {
             if(!dl->isFinished()
-                    && !m_runningDownloads.contains(dl->id()))
+                    && !m_runningDownloads.contains(dl->id())
+                    && dl->isEnabled())
                 return dl;
         }
     }
@@ -48,6 +49,13 @@ void DownloadController::startNextDownload()
             connect(dl, &Download::finished, [=]() {
                 m_runningDownloads.remove(dl->id());
                 startNextDownload();
+            });
+
+            connect(dl, &Download::enabled, [=]() {
+                if(!dl->isEnabled()) {
+                    m_runningDownloads.remove(dl->id());
+                    startNextDownload();
+                }
             });
 
             return;

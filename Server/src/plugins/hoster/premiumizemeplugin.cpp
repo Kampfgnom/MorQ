@@ -54,10 +54,10 @@ PremiumizeMeDownloadHandler::PremiumizeMeDownloadHandler(Download *download, Pre
     QObject::connect(m_downloader, &Downloader::error, [&]() {
         m_download->setFileName(m_downloader->fileName());
         m_download->setMessage(m_downloader->errorString());
+        m_download->setEnabled(false);
         Controller::downloadsDao()->update(m_download);
 
         this->deleteLater();
-        disconnect(this);
     });
 
     if(!s_timer.isActive()) {
@@ -88,6 +88,7 @@ QNetworkReply *PremiumizeMeDownloadHandler::getDownloadInformationReply()
 
     QObject::connect(reply, ERRORSIGNAL, [=]() {
         m_download->setMessage("Network Error: "+reply->errorString());
+        m_download->setEnabled(false);
         reply->deleteLater();
     });
 
@@ -123,6 +124,10 @@ void PremiumizeMeDownloadHandler::download()
         Controller::downloadsDao()->update(m_download);
     });
 
+    QObject::connect(m_downloader, &Downloader::error, [=]() {
+        disconnect(connection);
+    });
+
     QObject::connect(this, &QObject::destroyed, [=]() {
         disconnect(connection);
     });
@@ -149,6 +154,7 @@ void PremiumizeMeDownloadHandler::generateLinkReplyFinished()
     QRegularExpressionMatch match = LOCATION_REGEXP.match(data);
     if(!match.hasMatch()) {
         m_download->setMessage("No download url found: "+data);
+        m_download->setEnabled(false);
         return;
     }
 

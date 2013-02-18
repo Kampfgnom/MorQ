@@ -261,6 +261,7 @@ void Downloader::_readAvailableBytes()
         if(data->file->exists()) {
             setErrorString(QString("File exists '%1'.")
                            .arg(data->file->fileName()));
+            emit error();
             return;
         }
 
@@ -268,6 +269,7 @@ void Downloader::_readAvailableBytes()
             setErrorString(QString("Could not write to file '%1': %2")
                            .arg(data->file->fileName())
                            .arg(data->file->errorString()));
+            emit error();
             return;
         }
     }
@@ -276,7 +278,21 @@ void Downloader::_readAvailableBytes()
         data->buffer = new char[DownloaderData::BUFFERSIZE];
 
     qint64 read = data->reply->read(data->buffer, DownloaderData::BUFFERSIZE);
+    if(read == -1) {
+        setErrorString(QString("Could not read from network: %2")
+                       .arg(data->reply->errorString()));
+        emit error();
+        return;
+    }
+
     qint64 write = data->file->write(data->buffer, read);
+    if(write == -1) {
+        setErrorString(QString("Could not write to file '%1': %2")
+                       .arg(data->file->fileName())
+                       .arg(data->file->errorString()));
+        emit error();
+        return;
+    }
     Q_ASSERT(read == write);
 
     data->bytesWritten += write;
