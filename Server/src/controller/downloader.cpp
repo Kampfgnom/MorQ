@@ -35,6 +35,9 @@ public:
     Downloader *q;
     QString errorString;
     bool gettingMetaData;
+    char *buffer;
+
+    static qint64 BUFFERSIZE;
 
     QString fileNameFromUrl() const;
 };
@@ -57,12 +60,16 @@ Downloader::Downloader(QObject *parent) :
     QObject(parent),
     data(new DownloaderData)
 {
+    data->buffer = nullptr;
     data->q = this;
 }
+
+qint64 DownloaderData::BUFFERSIZE = (2 << 18);
 
 Downloader::~Downloader()
 {
     if(data->reply) {
+        data->reply->disconnect();
         data->reply->abort();
         data->reply->deleteLater();
     }
@@ -71,6 +78,10 @@ Downloader::~Downloader()
         data->file->flush();
         data->file->close();
         data->file->deleteLater();
+    }
+
+    if(data->buffer) {
+        delete[] data->buffer;
     }
 }
 
@@ -185,6 +196,7 @@ void Downloader::startDownload()
 
     data->bytesWritten = 0;
     data->reply = Controller::networkAccessManager()->get(QNetworkRequest(redirectedUrl()));
+    data->reply->setReadBufferSize(0);
 
     QObject::connect(data->reply, &QNetworkReply::readyRead,
                      this, &Downloader::_readAvailableBytes);
@@ -240,8 +252,18 @@ void Downloader::_metaDataChanged()
 
 void Downloader::_readAvailableBytes()
 {
+    qint64 bytesAvailable = data->reply->bytesAvailable();
+    if(bytesAvailable < DownloaderData::BUFFERSIZE)
+        return;
+
     if(!data->file) {
         data->file = new QFile(data->destinationFolder + QDir::separator() + data->fileName);
+        if(data->file->exists()) {
+            setErrorString(QString("File exists '%1'.")
+                           .arg(data->file->fileName()));
+            return;
+        }
+
         if(!data->file->open(QIODevice::WriteOnly)) {
             setErrorString(QString("Could not write to file '%1': %2")
                            .arg(data->file->fileName())
@@ -250,14 +272,15 @@ void Downloader::_readAvailableBytes()
         }
     }
 
-    int bytesAvailable = data->reply->bytesAvailable();
-    if(bytesAvailable < (2 << 14))
-        return;
+    if(!data->buffer)
+        data->buffer = new char[DownloaderData::BUFFERSIZE];
 
-    data->file->write(data->reply->read(bytesAvailable));
+    qint64 read = data->reply->read(data->buffer, DownloaderData::BUFFERSIZE);
+    qint64 write = data->file->write(data->buffer, read);
+    Q_ASSERT(read == write);
 
-    data->bytesWritten += bytesAvailable;
-    emit bytesWritten(bytesAvailable);
+    data->bytesWritten += write;
+    emit bytesWritten(write);
 }
 
 void Downloader::_finishedDownload()
@@ -265,16 +288,19 @@ void Downloader::_finishedDownload()
     int bytesAvailable = data->reply->bytesAvailable();
 
     data->bytesWritten += bytesAvailable;
-    data->file->write(data->reply->readAll());
+    qint64 write = data->file->write(data->reply->readAll());
+    Q_ASSERT(bytesAvailable == write);
 
     emit bytesWritten(bytesAvailable);
 
     data->reply->deleteLater();
     data->file->flush();
     data->file->deleteLater();
+    delete[] data->buffer;
 
     data->reply = nullptr;
     data->file = nullptr;
+    data->buffer = nullptr;
     data->finished = true;
 
     emit finished();

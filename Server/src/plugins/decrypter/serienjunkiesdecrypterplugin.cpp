@@ -93,6 +93,7 @@ void SerienJunkiesDecryptHandler::replyFinished()
     foreach(const QUrl &url, reply->urls()) {
         Download *download = Controller::links()->createDownload(url);
         m_package->addDownload(download);
+        m_package->setMessage(QString());
         Controller::downloadsDao()->update(download);
         Controller::downloadPackagesDao()->update(m_package);
     }

@@ -5,6 +5,7 @@
 
 class Download;
 class QUrl;
+class Downloader;
 
 class HosterPlugin : public QObject
 {
@@ -17,7 +18,7 @@ public:
     HosterPlugin(QObject *parent = 0);
 
     virtual void getDownloadInformation(Download *download) = 0;
-    virtual void handleDownload(Download *download) = 0;
+    virtual Downloader *handleDownload(Download *download) = 0;
     virtual bool canHandleUrl(const QUrl &url) const = 0;
 
     Account account() const;

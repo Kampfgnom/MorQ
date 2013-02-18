@@ -25,10 +25,18 @@ public:
     void setBusy(bool busy);
     void setStatusMessage(const QString &message);
 
+    void closeEvent(QCloseEvent *);
+
 private slots:
     void on_actionDownloads_triggered();
 
     void on_actionPreferences_triggered();
+
+    void on_actionDownload_Preferences_triggered();
+
+    void on_actionPremiumizeMe_Preferences_triggered();
+
+    void on_actionStart_triggered();
 
 private:
     static MainWindow *s_instance;

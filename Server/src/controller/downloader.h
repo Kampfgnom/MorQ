@@ -50,6 +50,7 @@ Q_SIGNALS:
     void finished();
     void error();
 
+
 private Q_SLOTS:
     void _metaDataChanged();
     void _readAvailableBytes();

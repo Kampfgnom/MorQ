@@ -193,7 +193,13 @@ background-color: rgb(227,227,227);
           <property name="currentIndex">
            <number>0</number>
           </property>
-          <widget class="DownloadsPage" name="downloadsPage"/>
+          <widget class="QWidget" name="downloadsPage">
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <widget class="QTreeView" name="treeViewDownloads"/>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </widget>
        </item>
@@ -223,7 +229,16 @@ background-color: rgb(227,227,227);
      <string>Extras</string>
     </property>
     <addaction name="actionPreferences"/>
+    <addaction name="actionDownload_Preferences"/>
+    <addaction name="actionPremiumizeMe_Preferences"/>
    </widget>
+   <widget class="QMenu" name="menuDownloads">
+    <property name="title">
+     <string>Downloads</string>
+    </property>
+    <addaction name="actionStart"/>
+   </widget>
+   <addaction name="menuDownloads"/>
    <addaction name="menuView"/>
    <addaction name="menuExtras"/>
   </widget>
@@ -259,19 +274,26 @@ background-color: rgb(227,227,227);
    <property name="text">
     <string>Preferences...</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+Shift+P</string>
+  </action>
+  <action name="actionDownload_Preferences">
+   <property name="text">
+    <string>Download Preferences...</string>
+   </property>
+  </action>
+  <action name="actionPremiumizeMe_Preferences">
+   <property name="text">
+    <string>PremiumizeMe Preferences...</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="text">
+    <string>Start</string>
+   </property>
+   <property name="toolTip">
+    <string>Start Downloads</string>
    </property>
   </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>DownloadsPage</class>
-   <extends>QWidget</extends>
-   <header>ui/mainwindow/downloadspage.h</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -1,10 +1,21 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "downloadsitemdelegate.h"
+
 #include "ui/preferences/preferenceswindow.h"
+#include "controller/controller.h"
+#include "model/downloadsitemmodel.h"
+#include "controller/downloadcontroller.h"
 
 #include <QLabel>
 #include <QSettings>
+#include <QDebug>
+#include <QCloseEvent>
+
+static const QString WINDOWGEOMETRY("ui/mainwindow/geometry");
+static const QString WINDOWSTATE("ui/mainwindow/state");
+static const QString DOWNLOADSHEADERSTATE("ui/mainwindow/downloads/headerstate");
 
 MainWindow *MainWindow::s_instance = 0;
 
@@ -34,6 +45,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     m_statusMessageLabel = new QLabel(this);
     statusBar()->addWidget(m_statusMessageLabel);
+
+    ui->treeViewDownloads->setAttribute(Qt::WA_MacShowFocusRect, false);
+    ui->treeViewDownloads->setModel(new DownloadsItemModel(this));
+    ui->treeViewDownloads->setItemDelegateForColumn(DownloadsItemModel::ProgressColumn, new DownloadsItemDelegate(this));
+    ui->treeViewDownloads->setItemDelegateForColumn(DownloadsItemModel::UserInputColumn, new DownloadsItemDelegate(this));
+
+    QSettings settings;
+    restoreGeometry(settings.value(WINDOWGEOMETRY, "").toByteArray());
+    restoreState(settings.value(WINDOWSTATE, "").toByteArray());
+    ui->treeViewDownloads->header()->restoreState(settings.value(DOWNLOADSHEADERSTATE, "").toByteArray());
 }
 
 MainWindow *MainWindow::instance()
@@ -46,6 +67,11 @@ MainWindow *MainWindow::instance()
 
 MainWindow::~MainWindow()
 {
+    QSettings settings;
+    settings.setValue(WINDOWGEOMETRY, saveGeometry());
+    settings.setValue(WINDOWSTATE, saveState());
+    settings.setValue(DOWNLOADSHEADERSTATE, ui->treeViewDownloads->header()->saveState());
+
     delete ui;
 }
 
@@ -76,6 +102,13 @@ void MainWindow::setStatusMessage(const QString &message)
     m_statusMessageLabel->setText(message);
 }
 
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+    QMainWindow::closeEvent(e);
+//    setVisible(false);
+//    e->setAccepted(true);
+}
+
 void MainWindow::on_actionDownloads_triggered()
 {
     ui->actionDownloads->setChecked(true);
@@ -97,4 +130,27 @@ void MainWindow::on_actionPreferences_triggered()
     m_preferencesWindow->raise();
     m_preferencesWindow->activateWindow();
     m_preferencesWindow->show();
+}
+
+void MainWindow::on_actionDownload_Preferences_triggered()
+{
+    on_actionPreferences_triggered();
+    if(!m_preferencesWindow)
+        return;
+
+    m_preferencesWindow->setCurrentPage(PreferencesWindow::DownloadsPage);
+}
+
+void MainWindow::on_actionPremiumizeMe_Preferences_triggered()
+{
+    on_actionPreferences_triggered();
+    if(!m_preferencesWindow)
+        return;
+
+    m_preferencesWindow->setCurrentPage(PreferencesWindow::PremiumizeMePage);
+}
+
+void MainWindow::on_actionStart_triggered()
+{
+    Controller::downloads()->startDownloads();
 }

@@ -2,35 +2,26 @@
 #define DOWNLOADCONTROLLER_H
 
 #include <QObject>
+#include <QHash>
 
-#include "controller.h"
-#include "model/downloadsitemmodel.h"
-
-#include <download.h>
-#include <downloadpackage.h>
-
-#include <QClipboard>
-#include <QTimer>
-
+class Downloader;
 class Download;
-class DownloadPackage;
-class QDownload;
-class QShareHoster;
 
 class DownloadController : public QObject
 {
     Q_OBJECT
 public:
-    void addDownload(const QUrl &url);
-
-    DownloadsItemModel *model() const;
-
-private slots:
+    void startDownloads();
 
 private:
     friend class Controller;
     explicit DownloadController(QObject *parent = 0);
-    DownloadsItemModel *m_model;
+
+    void startNextDownload();
+
+    Download *findNextUnfinishedDownload();
+
+    QHash<int, bool> m_runningDownloads;
 
     Q_DISABLE_COPY(DownloadController)
 };

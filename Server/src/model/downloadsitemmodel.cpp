@@ -33,10 +33,17 @@ DownloadsItemModel::DownloadsItemModel(QObject *parent) :
 
     foreach(QObject *object, Controller::downloadPackagesDao()->readAllObjects()) {
         DownloadPackage *package = static_cast<DownloadPackage *>(object);
-        package->setParent(this);
         m_packageRows.insert(package, m_packagesCache.size());
         m_packagesCache.append(package);
+
+        foreach(Download *dl, package->downloads()) {
+            m_downloadsCache[dl] = package;
+        }
     }
+}
+
+DownloadsItemModel::~DownloadsItemModel()
+{
 }
 
 Qt::ItemFlags DownloadsItemModel::flags(const QModelIndex &index) const
@@ -58,8 +65,9 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
 
     static double speed = 0.0;
     static double weightedSpeed = 0.0;
-    static double progress = 0.0;
+    static QFileIconProvider provider;
     static QByteArray captchaData;
+    static QTime eta;
 
     if(!index.parent().isValid()) {
         DownloadPackage *package = m_packagesCache.at(index.row());
@@ -70,25 +78,36 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
                 return package->name();
 
             case ProgressColumn:
-                progress = qAbs(100.0 * package->progress()); // ensure, that it is positive. Damn doubles
-                return QString("%1 %").arg(QString::number(progress, 'f', 2));
+                return package->progress(); // painting percentages is done by item delegate
+
+            case FileSizeColumn:
+                return humanReadableSize(package->totalFileSize());
+
+            case DownloadedColumn:
+                return humanReadableSize(package->bytesDownloaded());
 
             case SpeedColumn:
-                speed = double(package->speed() / 1000.0);
+                speed = qAbs(double(package->speed()));
                 if(qFuzzyIsNull(speed))
                     return QVariant();
 
-                return QString("%1 KB/s").arg(QString::number(speed,'f',2));
+                return QString("%1/s").arg(humanReadableSize(speed));
 
             case SpeedWeightedColumn:
-                weightedSpeed = double(package->speedWeighted() / 1000.0);
-                if(qFuzzyIsNull(speed))
+                weightedSpeed = qAbs(double(package->speedWeighted()));
+                if(qFuzzyIsNull(weightedSpeed))
                     return QVariant();
 
-                return QString("%1 KB/s").arg(QString::number(weightedSpeed,'f',2));
+                return QString("%1/s").arg(humanReadableSize(weightedSpeed));
 
             case EtaColumn:
-                return package->eta().toString("hh:mm:ss");
+                eta = package->eta();
+                if(eta.isNull())
+                    return QVariant();
+                if(eta == QTime(0,0,0))
+                    return QVariant();
+
+                return eta.toString("hh:mm:ss");
 
             case MessageColumn:
                 return package->message();
@@ -133,25 +152,36 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
                 return dl->fileName();
 
             case ProgressColumn:
-                progress = qAbs(100.0 * dl->progress()); // ensure, that it is positive. Damn doubles
-                return QString("%1 %").arg(QString::number(progress, 'f', 2));
+                return dl->progress(); // painting percentages is done by item delegate
+
+            case FileSizeColumn:
+                return humanReadableSize(dl->fileSize());
+
+            case DownloadedColumn:
+                return humanReadableSize(dl->bytesDownloaded());
 
             case SpeedColumn:
-                speed = double(dl->speed() / 1000.0);
+                speed = qAbs(double(dl->speed()));
                 if(qFuzzyIsNull(speed))
                     return QVariant();
 
-                return QString("%1 KB/s").arg(QString::number(speed,'f',2));
+                return QString("%1/s").arg(humanReadableSize(speed));
 
             case SpeedWeightedColumn:
-                weightedSpeed = double(dl->speedWeighted() / 1000.0);
-                if(qFuzzyIsNull(speed))
+                weightedSpeed = qAbs(double(dl->speedWeighted()));
+                if(qFuzzyIsNull(weightedSpeed))
                     return QVariant();
 
-                return QString("%1 KB/s").arg(QString::number(weightedSpeed,'f',2));
+                return QString("%1/s").arg(humanReadableSize(weightedSpeed));
 
             case EtaColumn:
-                return dl->eta().toString("hh:mm:ss");
+                eta = dl->eta();
+                if(eta.isNull())
+                    return QVariant();
+                if(eta == QTime(0,0,0))
+                    return QVariant();
+
+                return eta.toString("hh:mm:ss");
 
             case MessageColumn:
                 return dl->message();
@@ -168,13 +198,18 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
         }
         else if(role == Qt::DecorationRole) {
 
-            static QFileIconProvider provider;
-            // TODO: This might be slow.
-            QTemporaryFile file(QString("XXXXXX").append(dl->fileName())); // XXXXXX so that QTemporaryFile does not append these
-                                                                           // which would overwrite the original extension
-            file.open(); // Open, because QFileIconProvider only works for existing files... This little fucker
-            QFileInfo info(file);
-            QIcon icon = provider.icon(info);
+            QIcon icon;
+            if(m_icons.contains(dl->fileName())) {
+                icon = m_icons.value(dl->fileName());
+            }
+            else {
+                QTemporaryFile file(QString("XXXXXX").append(dl->fileName())); // XXXXXX so that QTemporaryFile does not append these
+                                                                               // which would overwrite the original extension
+                file.open(); // Open, because QFileIconProvider only works for existing files... This little fucker
+                QFileInfo info(file);
+                icon = provider.icon(info);
+                m_icons.insert(dl->fileName(), icon);
+            }
 
             switch(index.column()) {
             case NameColumn:
@@ -197,6 +232,10 @@ QVariant DownloadsItemModel::headerData(int section, Qt::Orientation orientation
         switch(section) {
         case NameColumn:
             return QVariant("Name");
+        case FileSizeColumn:
+            return QVariant("Size");
+        case DownloadedColumn:
+            return QVariant("Downloaded");
         case ProgressColumn:
             return QVariant("Progress");
         case SpeedColumn:
@@ -233,7 +272,7 @@ int DownloadsItemModel::rowCount(const QModelIndex &parent) const
 int DownloadsItemModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return 8;
+    return 11;
 }
 
 bool DownloadsItemModel::hasChildren(const QModelIndex &parent) const
@@ -284,27 +323,20 @@ void DownloadsItemModel::insertPackage(QObject *object)
     DownloadPackage *insertedPackage = static_cast<DownloadPackage *>(object);
     m_packageRows.insert(insertedPackage, m_packagesCache.size());
     m_packagesCache.append(insertedPackage);
+
+    foreach(Download *dl, insertedPackage->downloads()) {
+        m_downloadsCache[dl] = insertedPackage;
+    }
     endInsertRows();
 }
 
 void DownloadsItemModel::updatePackage(QObject *object)
 {
-    DownloadPackage *updatedPackage = static_cast<DownloadPackage *>(object);
-    QVariant key = packagePrimaryKey(updatedPackage);
     QMutableListIterator<DownloadPackage *> it(m_packagesCache);
     int i = 0;
     while(it.hasNext()) {
         it.next();
         if(it.value() == object) {
-            emit dataChanged(index(i, 0,QModelIndex()),
-                             index(i, columnCount(QModelIndex()),QModelIndex()));
-            return;
-        }
-
-        if(packagePrimaryKey(it.value()) == key) {
-            it.remove();
-            it.insert(updatedPackage);
-            m_packageRows.insert(updatedPackage, i);
             emit dataChanged(index(i, 0,QModelIndex()),
                              index(i, columnCount(QModelIndex()),QModelIndex()));
             return;
@@ -315,14 +347,11 @@ void DownloadsItemModel::updatePackage(QObject *object)
 
 void DownloadsItemModel::removePackage(QObject *object)
 {
-    DownloadPackage *removedPackage = static_cast<DownloadPackage *>(object);
-    QVariant key = packagePrimaryKey(removedPackage);
     QMutableListIterator<DownloadPackage *> it(m_packagesCache);
     int i = 0;
     while(it.hasNext()) {
         it.next();
-        if(it.value() == object
-                || packagePrimaryKey(it.value()) == key) {
+        if(it.value() == object) {
             beginRemoveRows(QModelIndex(), i, i);
             m_packageRows.remove(it.value());
             it.remove();
@@ -356,15 +385,20 @@ void DownloadsItemModel::updateDownload(QObject *object)
 
     if(!download->package())
         return;
-
     int i = download->package()->downloads().indexOf(download);
     if(i < 0)
         return;
 
     QModelIndex parent = indexForPackage(download->package());
 
-    beginInsertRows(parent, i, i);
-    endInsertRows();
+    if(m_downloadsCache[download] != download->package()) {
+
+        beginInsertRows(parent, i, i);
+        endInsertRows();
+
+        return;
+    }
+
     emit dataChanged(index(i,0,parent),
                      index(i,columnCount(parent), parent));
 }
@@ -373,19 +407,45 @@ void DownloadsItemModel::removeDownload(QObject *object)
 {
 }
 
-QVariant DownloadsItemModel::packagePrimaryKey(DownloadPackage *package) const
+QString DownloadsItemModel::humanReadableSize(qint64 bytes) const
 {
-    QDataSuite::MetaProperty keyProperty = Controller::downloadPackagesDao()->dataSuiteMetaObject().primaryKeyProperty();
-    return keyProperty.read(package);
+    static const int THRESH = 1100;
+    if(bytes < 0)
+        return QString();
+
+    if(bytes == 0)
+        return QString("0.0 MB");
+
+    double result = bytes;
+    int i = 0;
+    while(result > THRESH
+          && i < 4) {
+        result /= 1000.0;
+        ++i;
+    }
+
+    QString unit("B");
+
+    switch(i) {
+    case 1:
+        unit.prepend("K");
+        break;
+    case 2:
+        unit.prepend("M");
+        break;
+    case 3:
+        unit.prepend("G");
+        break;
+    case 4:
+    default:
+        unit.prepend("T");
+        break;
+    }
+
+    return QString("%1 %2").arg(QString::number(result,'f',2)).arg(unit);
 }
 
 QModelIndex DownloadsItemModel::indexForPackage(DownloadPackage *package) const
 {
     return createIndex(m_packageRows.value(package), 0, package);
-}
-
-QVariant DownloadsItemModel::downloadPrimaryKey(Download *download) const
-{
-    QDataSuite::MetaProperty keyProperty = Controller::downloadsDao()->dataSuiteMetaObject().primaryKeyProperty();
-    return keyProperty.read(download);
 }

@@ -9,6 +9,7 @@ class QNetworkReply;
 class Download;
 class PremiumizeMeDownloadHandler;
 class Downloader;
+class QTimer;
 
 class PremuimizeMePlugin : public HosterPlugin
 {
@@ -17,13 +18,8 @@ public:
     explicit PremuimizeMePlugin(QObject *parent = 0);
 
     void getDownloadInformation(Download *download);
-    void handleDownload(Download *download);
+    Downloader *handleDownload(Download *download);
     bool canHandleUrl(const QUrl &url) const;
-
-private:
-    QHash<Download *, PremiumizeMeDownloadHandler *> m_handlers;
-
-    PremiumizeMeDownloadHandler *handler(Download *download);
 };
 
 class PremiumizeMeDownloadHandler : public QObject
@@ -31,8 +27,14 @@ class PremiumizeMeDownloadHandler : public QObject
     Q_OBJECT
 public:
     PremiumizeMeDownloadHandler(Download *download, PremuimizeMePlugin *parent);
+    ~PremiumizeMeDownloadHandler();
     void getDownloadInformation();
     void download();
+
+    Downloader *downloader() const;
+
+signals:
+    void downloadInformationReady();
 
 private slots:
     void generateLinkReplyFinished();
@@ -41,6 +43,9 @@ private:
     Download *m_download;
     PremuimizeMePlugin *m_plugin;
     Downloader *m_downloader;
+    static QTimer s_timer;
+
+    QNetworkReply *getDownloadInformationReply();
 };
 
 #endif // PREMIUMIZEMEPLUGIN_H

@@ -7,9 +7,13 @@
 #include "plugins/hoster/hosterplugin.h"
 #include "plugins/decrypter/decrypterplugin.h"
 
+#include <download.h>
+#include <downloadpackage.h>
+
 #include <QApplication>
 #include <QClipboard>
 #include <QTimer>
+#include <QUrl>
 
 LinksController::LinksController(QObject *parent) :
     QObject(parent)
@@ -78,7 +82,6 @@ Download *LinksController::createDownload(const QUrl &url)
     auto downloadsDao = Controller::downloadsDao();
     Download *download = downloadsDao->create();
     download->setUrl(url);
-    download->setParent(this);
     downloadsDao->insert(download);
 
     return download;
@@ -89,7 +92,6 @@ DownloadPackage *LinksController::createPackage(const QUrl &url)
     auto packageDao = Controller::downloadPackagesDao();
     DownloadPackage *package = packageDao->create();
     package->setSourceUrl(url);
-    package->setParent(this);
     packageDao->insert(package);
 
     return package;

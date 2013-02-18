@@ -52,20 +52,22 @@ public:
 
     DownloadPackage *package() const;
 
-    int fileSize() const;
-    void setFileSize(int bytes);
+    qint64 fileSize() const;
+    void setFileSize(qint64 bytes);
 
-    int bytesDownloaded() const;
-    void setBytesDownloaded(int bytes);
+    qint64 bytesDownloaded() const;
+    void setBytesDownloaded(qint64 bytes);
 
     double progress() const;
 
-    bool isFinished();
+    bool isFinished() const;
 
-    int speed() const;
-    int speedWeighted() const;
+    qint64 speed() const;
+    qint64 speedWeighted() const;
     QTime eta() const;
 
+signals:
+    void finished();
 
 private:
     friend class DownloadPackage;
@@ -80,15 +82,15 @@ private:
     QUrl m_redirectedUrl;
     QString m_destinationFolder;
     QString m_fileName;
-    int m_fileSize;
-    int m_bytesDownloaded;
+    qint64 m_fileSize;
+    qint64 m_bytesDownloaded;
     QString m_message;
     DownloadPackage *m_package;
 
-    mutable int m_speed;
-    mutable int m_weightedSpeed;
+    mutable qint64 m_speed;
+    mutable qint64 m_weightedSpeed;
     mutable QElapsedTimer m_speedTimer;
-    mutable int m_bytesDownloadedAtLastSpeedMeasurement;
+    mutable qint64 m_bytesDownloadedAtLastSpeedMeasurement;
     mutable QTime m_eta;
 
     static float s_speedAlpha;

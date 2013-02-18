@@ -4,7 +4,11 @@
 #include "plugincontroller.h"
 #include "linkscontroller.h"
 
+#include <download.h>
+#include <downloadpackage.h>
+
 #include <QPersistence/databaseschema.h>
+#include <QPersistence/persistentdataaccessobject.h>
 
 #include <QObject>
 #include <QSqlDatabase>
@@ -12,26 +16,37 @@
 #include <QSqlError>
 #include <QNetworkAccessManager>
 
-QPersistence::PersistentDataAccessObject<Download> *Controller::s_downloadsDao = nullptr;
-QPersistence::PersistentDataAccessObject<DownloadPackage> *Controller::s_downloadPackagesDao = nullptr;
+QDataSuite::CachedDataAccessObject<Download> *Controller::s_downloadsDao = nullptr;
+QDataSuite::CachedDataAccessObject<DownloadPackage> *Controller::s_downloadPackagesDao = nullptr;
 
 static QObject GUARD;
 
 bool Controller::initialize()
 {
-    if(!initlializeDatabase())
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("test.sqlite");
+    if(!db.open()) {
+        qCritical() << db.lastError();
         return false;
+    }
 
     QDataSuite::registerMetaObject<Download>();
-    s_downloadsDao = new QPersistence::PersistentDataAccessObject<Download>(QSqlDatabase::database(), &GUARD);
-    QPersistence::registerPersistentDataAccessObject<Download>(s_downloadsDao);
+    QPersistence::PersistentDataAccessObject<Download> *downloadsDao =
+            new QPersistence::PersistentDataAccessObject<Download>(QSqlDatabase::database(), &GUARD);
+
+    s_downloadsDao = new QDataSuite::CachedDataAccessObject<Download>(downloadsDao, &GUARD);
+    QDataSuite::registerDataAccessObject<Download>(s_downloadsDao, db.connectionName());
 
     QDataSuite::registerMetaObject<DownloadPackage>();
-    s_downloadPackagesDao = new QPersistence::PersistentDataAccessObject<DownloadPackage>(QSqlDatabase::database(), &GUARD);
-    QPersistence::registerPersistentDataAccessObject<DownloadPackage>(s_downloadPackagesDao);
+    QPersistence::PersistentDataAccessObject<DownloadPackage> *downloadPackagesDao =
+            new QPersistence::PersistentDataAccessObject<DownloadPackage>(QSqlDatabase::database(), &GUARD);
+
+    s_downloadPackagesDao = new QDataSuite::CachedDataAccessObject<DownloadPackage>(downloadPackagesDao, &GUARD);
+    QDataSuite::registerDataAccessObject<DownloadPackage>(s_downloadPackagesDao, db.connectionName());
 
     QPersistence::DatabaseSchema databaseSchema;
-    databaseSchema.createCleanSchema();
+    //    databaseSchema.createCleanSchema();
+    databaseSchema.adjustSchema();
 
     plugins();
     links();
@@ -50,12 +65,12 @@ DownloadController *Controller::downloads()
     return controller;
 }
 
-QPersistence::PersistentDataAccessObject<Download> *Controller::downloadsDao()
+QDataSuite::CachedDataAccessObject<Download> *Controller::downloadsDao()
 {
     return s_downloadsDao;
 }
 
-QPersistence::PersistentDataAccessObject<DownloadPackage> *Controller::downloadPackagesDao()
+QDataSuite::CachedDataAccessObject<DownloadPackage> *Controller::downloadPackagesDao()
 {
     return s_downloadPackagesDao;
 }
@@ -78,18 +93,6 @@ LinksController *Controller::links()
         controller = new LinksController(&GUARD);
 
     return controller;
-}
-
-bool Controller::initlializeDatabase()
-{
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName("test.sqlite");
-    if(!db.open()) {
-        qCritical() << db.lastError();
-        return false;
-    }
-
-    return true;
 }
 
 QNetworkAccessManager *Controller::networkAccessManager()

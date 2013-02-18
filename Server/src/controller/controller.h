@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include <QPersistence/persistentdataaccessobject.h>
+#include <QDataSuite/cacheddataaccessobject.h>
 
 class DownloadController;
 class PluginController;
@@ -19,16 +19,14 @@ public:
     static PluginController *plugins();
     static LinksController *links();
 
-    static QPersistence::PersistentDataAccessObject<Download> *downloadsDao();
-    static QPersistence::PersistentDataAccessObject<DownloadPackage> *downloadPackagesDao();
+    static QDataSuite::CachedDataAccessObject<Download> *downloadsDao();
+    static QDataSuite::CachedDataAccessObject<DownloadPackage> *downloadPackagesDao();
 
     static QNetworkAccessManager *networkAccessManager();
 
 private:
-    static bool initlializeDatabase();
-
-    static QPersistence::PersistentDataAccessObject<Download> *s_downloadsDao;
-    static QPersistence::PersistentDataAccessObject<DownloadPackage> *s_downloadPackagesDao;
+    static QDataSuite::CachedDataAccessObject<Download> *s_downloadsDao;
+    static QDataSuite::CachedDataAccessObject<DownloadPackage> *s_downloadPackagesDao;
 };
 
 #endif // CONTROLLER_H

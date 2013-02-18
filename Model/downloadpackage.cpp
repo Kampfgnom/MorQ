@@ -10,8 +10,8 @@ float DownloadPackage::s_speedAlpha(0.1);
 DownloadPackage::DownloadPackage(QObject *parent) :
     QObject(parent),
     m_id(0),
-    m_speed(-1),
-    m_weightedSpeed(-1),
+    m_speed(0),
+    m_weightedSpeed(0),
     m_speedTimer(QElapsedTimer()),
     m_bytesDownloadedAtLastSpeedMeasurement(-1)
 {
@@ -94,22 +94,30 @@ void DownloadPackage::setDownloads(const QList<Download *> downloads)
     m_downloads = downloads;
 }
 
-int DownloadPackage::totalFileSize() const
+qint64 DownloadPackage::totalFileSize() const
 {
-    // TODO aggregate download bytes totalFileSize
-    return 0;
+    qint64 total = 0;
+    foreach(Download *dl, downloads()) {
+        total += dl->fileSize();
+    }
+
+    return total;
 }
 
-int DownloadPackage::bytesDownloaded() const
+qint64 DownloadPackage::bytesDownloaded() const
 {
-    // TODO aggregate download bytesDownloaded
-    return 0;
+    qint64 total = 0;
+    foreach(Download *dl, downloads()) {
+        total += dl->bytesDownloaded();
+    }
+
+    return total;
 }
 
 double DownloadPackage::progress() const
 {
-    int byteDown = bytesDownloaded();
-    int total = totalFileSize();
+    qint64 byteDown = bytesDownloaded();
+    qint64 total = totalFileSize();
     if(byteDown <= 0
             || total <= 0)
         return 0.0;
@@ -117,7 +125,7 @@ double DownloadPackage::progress() const
     return double(byteDown) / double(total);
 }
 
-bool DownloadPackage::isFinished()
+bool DownloadPackage::isFinished() const
 {
     return totalFileSize() == bytesDownloaded();
 }
@@ -129,23 +137,41 @@ void DownloadPackage::calculateSpeed() const
         return;
     }
 
+    if(isFinished()) {
+        m_speed = 0;
+        m_weightedSpeed = 0;
+        m_eta = QTime();
+        return;
+    }
+
+
     qint64 elapsedTime = m_speedTimer.elapsed();
     if(elapsedTime > 100) {
-        int bytes = bytesDownloaded();
-        int bytesWritten = bytes - m_bytesDownloadedAtLastSpeedMeasurement;
+        qint64 bytes = bytesDownloaded();
+        qint64 bytesWritten = bytes - m_bytesDownloadedAtLastSpeedMeasurement;
 
         if(bytesWritten == 0
                 && elapsedTime < 3000)
             return;
 
-        m_bytesDownloadedAtLastSpeedMeasurement = bytes;
-        m_speed = bytesWritten * 1000 / elapsedTime;
+        if(m_bytesDownloadedAtLastSpeedMeasurement < 0) {
+            m_bytesDownloadedAtLastSpeedMeasurement = bytes;
+            return;
+        }
 
-        if(m_weightedSpeed == -1)
+        m_bytesDownloadedAtLastSpeedMeasurement = bytes;
+
+        m_speed = bytesWritten * 1000 / elapsedTime;
+        m_speed = qMax(qint64(0), m_speed);
+
+        if(m_weightedSpeed < 1000) // if weighted is less than 1kb/s just reset it.
             m_weightedSpeed = m_speed;
+        else if(m_speed <= 0)
+            m_weightedSpeed /= 10;
         else
             m_weightedSpeed = m_speed * s_speedAlpha + m_weightedSpeed * (1 - s_speedAlpha);
 
+        m_speed = qMax(qint64(0), m_speed);
         m_speedTimer.restart();
 
         if(m_weightedSpeed <= 0) {
@@ -153,7 +179,7 @@ void DownloadPackage::calculateSpeed() const
             return;
         }
 
-        int bytesLeft = totalFileSize() - bytes;
+        qint64 bytesLeft = totalFileSize() - bytes;
 
         if(bytesLeft < 0) {
             m_eta = QTime();
@@ -170,13 +196,13 @@ void DownloadPackage::calculateSpeed() const
     }
 }
 
-int DownloadPackage::speed() const
+qint64 DownloadPackage::speed() const
 {
     calculateSpeed();
     return m_speed;
 }
 
-int DownloadPackage::speedWeighted() const
+qint64 DownloadPackage::speedWeighted() const
 {
     calculateSpeed();
     return m_weightedSpeed;

@@ -2,6 +2,7 @@
 
 #include "controller/controller.h"
 #include "controller/downloader.h"
+#include "preferences.h"
 
 #include <download.h>
 
@@ -9,6 +10,7 @@
 #include <QNetworkReply>
 #include <QNetworkAccessManager>
 #include <QRegularExpression>
+#include <QTimer>
 
 static const QRegularExpression LOCATION_REGEXP(QLatin1String("location\":\"(http[^\"]+)"));
 static void (QNetworkReply:: *ERRORSIGNAL)(QNetworkReply::NetworkError) = &QNetworkReply::error;
@@ -30,26 +32,17 @@ bool PremuimizeMePlugin::canHandleUrl(const QUrl &url) const
     return false;
 }
 
-PremiumizeMeDownloadHandler *PremuimizeMePlugin::handler(Download *download)
-{
-    PremiumizeMeDownloadHandler *h = m_handlers[download];
-    if(!h) {
-        h = new PremiumizeMeDownloadHandler(download, this);
-        m_handlers.insert(download, h);
-    }
-    return h;
-}
-
 void PremuimizeMePlugin::getDownloadInformation(Download *download)
 {
-    PremiumizeMeDownloadHandler *h = handler(download);
+    PremiumizeMeDownloadHandler *h = new PremiumizeMeDownloadHandler(download, this);
     h->getDownloadInformation();
 }
 
-void PremuimizeMePlugin::handleDownload(Download *download)
+Downloader *PremuimizeMePlugin::handleDownload(Download *download)
 {
-    PremiumizeMeDownloadHandler *h = handler(download);
+    PremiumizeMeDownloadHandler *h = new PremiumizeMeDownloadHandler(download, this);
     h->download();
+    return h->downloader();
 }
 
 PremiumizeMeDownloadHandler::PremiumizeMeDownloadHandler(Download *download, PremuimizeMePlugin *parent) :
@@ -58,9 +51,26 @@ PremiumizeMeDownloadHandler::PremiumizeMeDownloadHandler(Download *download, Pre
     m_plugin(parent),
     m_downloader(new Downloader(this))
 {
+    QObject::connect(m_downloader, &Downloader::error, [&]() {
+        m_download->setFileName(m_downloader->fileName());
+        m_download->setMessage(m_downloader->errorString());
+        Controller::downloadsDao()->update(m_download);
+
+        this->deleteLater();
+        disconnect(this);
+    });
+
+    if(!s_timer.isActive()) {
+        s_timer.setInterval(1000);
+        s_timer.start();
+    }
 }
 
-void PremiumizeMeDownloadHandler::getDownloadInformation()
+PremiumizeMeDownloadHandler::~PremiumizeMeDownloadHandler()
+{
+}
+
+QNetworkReply *PremiumizeMeDownloadHandler::getDownloadInformationReply()
 {
     QUrlQuery query;
     query.addQueryItem("method", "directdownloadlink");
@@ -81,13 +91,52 @@ void PremiumizeMeDownloadHandler::getDownloadInformation()
         reply->deleteLater();
     });
 
+    return reply;
+}
+
+void PremiumizeMeDownloadHandler::getDownloadInformation()
+{
+    QNetworkReply *reply = getDownloadInformationReply();
+
     connect(reply, &QNetworkReply::finished,
             this, &PremiumizeMeDownloadHandler::generateLinkReplyFinished);
+
+    connect(this, &PremiumizeMeDownloadHandler::downloadInformationReady, [=]() {
+        this->deleteLater();
+    });
 }
 
 void PremiumizeMeDownloadHandler::download()
 {
+    QNetworkReply *reply = getDownloadInformationReply();
 
+    connect(reply, &QNetworkReply::finished,
+            this, &PremiumizeMeDownloadHandler::generateLinkReplyFinished);
+
+    connect(this, &PremiumizeMeDownloadHandler::downloadInformationReady, [=]() {
+        m_downloader->setDestinationFolder(Preferences::downloadFolder());
+        m_downloader->startDownload();
+    });
+
+    auto connection = QObject::connect(&s_timer, &QTimer::timeout, [=]() {
+        m_download->setBytesDownloaded(m_downloader->bytesWritten());
+        Controller::downloadsDao()->update(m_download);
+    });
+
+    QObject::connect(this, &QObject::destroyed, [=]() {
+        disconnect(connection);
+    });
+
+    QObject::connect(m_downloader, &Downloader::finished, [=]() {
+        m_download->setBytesDownloaded(m_downloader->bytesWritten());
+        Controller::downloadsDao()->update(m_download);
+        this->deleteLater();
+    });
+}
+
+Downloader *PremiumizeMeDownloadHandler::downloader() const
+{
+    return m_downloader;
 }
 
 void PremiumizeMeDownloadHandler::generateLinkReplyFinished()
@@ -120,18 +169,8 @@ void PremiumizeMeDownloadHandler::generateLinkReplyFinished()
         m_download->setMessage("");
         Controller::downloadsDao()->update(m_download);
 
-        m_downloader->deleteLater();
-        m_downloader = nullptr;
+        emit downloadInformationReady();
     });
-
-    QObject::connect(m_downloader, &Downloader::error, [&]() {
-        m_download->setFileName(m_downloader->fileName());
-        m_download->setMessage(m_downloader->errorString());
-        Controller::downloadsDao()->update(m_download);
-
-        m_downloader->deleteLater();
-        m_downloader = nullptr;
-    });
-
-    // TODO possibly delete this and remove from PremuimizeMePlugin::m_handlers to save memory
 }
+
+QTimer PremiumizeMeDownloadHandler::s_timer;

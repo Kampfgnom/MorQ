@@ -49,15 +49,15 @@ public:
     QString captchaString() const;
     void setCaptchaString(const QString &string);
 
-    int totalFileSize() const;
-    int bytesDownloaded() const;
+    qint64 totalFileSize() const;
+    qint64 bytesDownloaded() const;
 
     double progress() const;
 
-    bool isFinished();
+    bool isFinished() const;
 
-    int speed() const;
-    int speedWeighted() const;
+    qint64 speed() const;
+    qint64 speedWeighted() const;
     QTime eta() const;
 
 signals:
@@ -69,7 +69,7 @@ private:
 
     void calculateSpeed() const;
 
-    int m_id;
+    qint64 m_id;
     QString m_name;
     QString m_message;
     QList<Download *> m_downloads;
@@ -77,10 +77,10 @@ private:
     QByteArray m_captcha;
     QString m_captchaString;
 
-    mutable int m_speed;
-    mutable int m_weightedSpeed;
+    mutable qint64 m_speed;
+    mutable qint64 m_weightedSpeed;
     mutable QElapsedTimer m_speedTimer;
-    mutable int m_bytesDownloadedAtLastSpeedMeasurement;
+    mutable qint64 m_bytesDownloadedAtLastSpeedMeasurement;
     mutable QTime m_eta;
 
     static float s_speedAlpha;

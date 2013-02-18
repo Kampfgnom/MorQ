@@ -17,6 +17,8 @@ public:
     enum Columns {
         NameColumn,
         ProgressColumn,
+        DownloadedColumn,
+        FileSizeColumn,
         SpeedColumn,
         SpeedWeightedColumn,
         EtaColumn,
@@ -27,6 +29,7 @@ public:
     };
 
     explicit DownloadsItemModel(QObject *parent = 0);
+    ~DownloadsItemModel();
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant data(const QModelIndex &index, int role) const;
@@ -50,9 +53,11 @@ private slots:
 private:
     QList<DownloadPackage *> m_packagesCache;
     QHash<DownloadPackage *, int> m_packageRows;
+    QHash<Download *, DownloadPackage *> m_downloadsCache;
 
-    QVariant downloadPrimaryKey(Download *download) const;
-    QVariant packagePrimaryKey(DownloadPackage *package) const;
+    QString humanReadableSize(qint64 bytes) const;
+
+    mutable QHash<QString, QIcon> m_icons;
 
     QModelIndex indexForPackage(DownloadPackage *package) const;
 };
