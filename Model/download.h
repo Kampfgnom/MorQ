@@ -23,6 +23,7 @@ class Download : public QObject
     Q_PROPERTY(DownloadPackage* package READ package WRITE setPackage)
     Q_PROPERTY(int fileSize READ fileSize WRITE setFileSize)
     Q_PROPERTY(int bytesDownloaded READ bytesDownloaded WRITE setBytesDownloaded)
+    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled)
 
     Q_CLASSINFO(QDATASUITE_PRIMARYKEY, "id")
     Q_CLASSINFO("QDATASUITE_PROPERTYMETADATA:id",
@@ -32,6 +33,7 @@ class Download : public QObject
 
 public:
     explicit Download(QObject *parent = 0);
+    ~Download();
 
     int id() const;
     
@@ -54,6 +56,8 @@ public:
 
     qint64 fileSize() const;
     void setFileSize(qint64 bytes);
+
+    int order() const;
 
     qint64 bytesDownloaded() const;
     void setBytesDownloaded(qint64 bytes);

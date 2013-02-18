@@ -1,6 +1,7 @@
 #include "downloadsitemdelegate.h"
 
 #include "model/downloadsitemmodel.h"
+#include "mainwindow.h"
 
 #include <downloadpackage.h>
 #include <download.h>
@@ -12,6 +13,7 @@
 #include <QDebug>
 #include <QBrush>
 #include <QApplication>
+#include <QPaintEvent>
 
 DownloadsItemDelegate::DownloadsItemDelegate(QObject *parent) :
     QStyledItemDelegate(parent)
@@ -19,16 +21,22 @@ DownloadsItemDelegate::DownloadsItemDelegate(QObject *parent) :
 }
 
 void DownloadsItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
+{  
+    painter->save();
+    QStyleOptionViewItem op = option;
+    initStyleOption(&op, index);
+
     if(index.column() == DownloadsItemModel::UserInputColumn) {
         QPixmap pixmap = index.data().value<QPixmap>();
         if(pixmap.isNull()) {
             QStyledItemDelegate::paint(painter, option, index);
+            painter->restore();
             return;
         }
 
         QApplication::style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, painter, NULL);
         painter->drawPixmap(option.rect, pixmap);
+        painter->restore();
         return;
     }
     else if(index.column() == DownloadsItemModel::ProgressColumn) {
@@ -58,9 +66,12 @@ void DownloadsItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem 
                                            &progressBarOption, painter);
 
         painter->drawText(option.rect, Qt::AlignCenter, QString("%1 %").arg(progress));
+        painter->restore();
 
         return;
     }
+
+    painter->restore();
 
     QStyledItemDelegate::paint(painter, option, index);
 }
@@ -100,6 +111,17 @@ QSize DownloadsItemDelegate::sizeHint(const QStyleOptionViewItem &option, const 
     return size;
 }
 
+void DownloadsItemDelegate::initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const
+{
+    QStyledItemDelegate::initStyleOption(option, index);
+    if(index.parent().isValid()) {
+        Download *download = static_cast<Download *>(index.internalPointer());
+        if(!download->isEnabled()) {
+            option->state = option->state & ~QStyle::State_Enabled;
+        }
+    }
+}
+
 void DownloadsItemDelegate::onEditingFinished()
 {
     CaptchaWidget *editor = qobject_cast<CaptchaWidget *>(sender());
@@ -107,19 +129,43 @@ void DownloadsItemDelegate::onEditingFinished()
     emit closeEditor(editor);
 }
 
-CaptchaWidget::CaptchaWidget(const QPixmap &pixmap, QWidget *parent) :
-    QWidget(parent)
+CaptchaWidget::CaptchaWidget(const QPixmap &pm, QWidget *parent) :
+    QWidget(parent),
+    m_pixmap(pm)
 {
     QLayout *l = new QVBoxLayout;
     setLayout(l);
 
     lineEdit = new QLineEdit(this);
     l->addWidget(lineEdit);
+    l->setContentsMargins(0,0,0,0);
+    setFocusProxy(lineEdit);
+    setFocusPolicy(Qt::StrongFocus);
 
     connect(lineEdit, &QLineEdit::editingFinished, this, &CaptchaWidget::editingFinished);
+
+    m_label = new QLabel();
+    m_label->setPixmap(pm);
+    m_label->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
+}
+
+CaptchaWidget::~CaptchaWidget()
+{
+    delete m_label;
 }
 
 QString CaptchaWidget::text() const
 {
     return lineEdit->text();
+}
+
+void CaptchaWidget::showEvent(QShowEvent* e)
+{
+    QPoint p = mapToGlobal(QPoint(0,lineEdit->height() + 5));
+    m_label->show();
+    m_label->move(p);
+
+    QWidget::showEvent(e);
+    lineEdit->activateWindow();
+    lineEdit->grabKeyboard();
 }

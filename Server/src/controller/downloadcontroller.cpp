@@ -34,17 +34,17 @@ Download *DownloadController::findNextUnfinishedDownload()
     return nullptr;
 }
 
-void DownloadController::startNextDownload()
+bool DownloadController::startNextDownload()
 {
     // find the next download
     Download *dl = findNextUnfinishedDownload();
     if(!dl)
-        return;
+        return false;
 
     foreach(HosterPlugin *hoster, Controller::plugins()->hosterPlugins()) {
         if(hoster->canHandleUrl(dl->url())) {
-            m_runningDownloads.insert(dl->id(), true);
-            hoster->handleDownload(dl);
+            Downloader *downloader = hoster->handleDownload(dl);
+            m_runningDownloads.insert(dl->id(), downloader);
 
             connect(dl, &Download::finished, [=]() {
                 m_runningDownloads.remove(dl->id());
@@ -58,15 +58,48 @@ void DownloadController::startNextDownload()
                 }
             });
 
-            return;
+            return true;
         }
     }
+
+    return false;
+}
+
+void DownloadController::removeDownload(Download *download)
+{
+    stopDownload(download);
+
+    Controller::downloadsDao()->remove(download);
+
+    qDebug() << "TEST1";
+    if(download->package()) {
+        download->package()->removeDownload(download);
+    }
+    qDebug() << "TEST2";
+}
+
+void DownloadController::removePackage(DownloadPackage *package)
+{
+    foreach(Download *dl, package->downloads()) {
+        removeDownload(dl);
+    }
+
+    Controller::downloadPackagesDao()->remove(package);
 }
 
 
 void DownloadController::startDownloads()
 {
     while(m_runningDownloads.size() < Preferences::maxDownloads()) {
-        startNextDownload();
+        if(!startNextDownload())
+            break;
+    }
+}
+
+void DownloadController::stopDownload(Download *download)
+{
+    if(m_runningDownloads.contains(download->id())) {
+        m_runningDownloads.value(download->id())->abortDownload();
+        m_runningDownloads.remove(download->id());
     }
 }

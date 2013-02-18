@@ -28,6 +28,7 @@ class DownloadPackage : public QObject
 
 public:
     explicit DownloadPackage(QObject *parent = 0);
+    ~DownloadPackage();
 
     int id() const;
 
@@ -42,6 +43,7 @@ public:
 
     QList<Download *> downloads() const;
     void addDownload(Download *download);
+    void removeDownload(Download *download);
 
     QByteArray captcha() const;
     void setCaptcha(const QByteArray &captcha);

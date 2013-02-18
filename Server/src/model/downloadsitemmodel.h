@@ -35,11 +35,14 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     int rowCount(const QModelIndex &parent) const;
-    int columnCount(const QModelIndex &parent) const;
+    int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
     bool hasChildren(const QModelIndex &parent) const;
     QModelIndex parent(const QModelIndex &child) const;
-    QModelIndex index(int row, int column, const QModelIndex &parent) const;
+    QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+
+    Download *downloadByIndex(const QModelIndex &index) const;
+    DownloadPackage *packageByIndex(const QModelIndex &index) const;
 
 private slots:
     void insertPackage(QObject *object);
@@ -51,9 +54,13 @@ private slots:
     void removeDownload(QObject *object);
 
 private:
-    QList<DownloadPackage *> m_packagesCache;
+    QList<DownloadPackage *> m_packages;
     QHash<DownloadPackage *, int> m_packageRows;
-    QHash<Download *, DownloadPackage *> m_downloadsCache;
+    QMap<Download *, int> m_downloadRows;
+
+    void _insertPackage(DownloadPackage *package);
+    void _insertDownload(Download *download);
+    void _removeDownload(Download *download);
 
     QString humanReadableSize(qint64 bytes) const;
 

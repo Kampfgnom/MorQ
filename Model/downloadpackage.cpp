@@ -17,6 +17,11 @@ DownloadPackage::DownloadPackage(QObject *parent) :
 {
 }
 
+DownloadPackage::~DownloadPackage()
+{
+    qDebug() << "~DownloadPackage(" << m_id << ")=" << this;
+}
+
 int DownloadPackage::id() const
 {
     return m_id;
@@ -64,8 +69,20 @@ QList<Download *> DownloadPackage::downloads() const
 
 void DownloadPackage::addDownload(Download *download)
 {
+    if(m_downloads.contains(download))
+        return;
+
     download->setPackage(this);
     m_downloads.append(download);
+}
+
+void DownloadPackage::removeDownload(Download *download)
+{
+    if(!m_downloads.contains(download))
+        return;
+
+    download->setPackage(nullptr);
+    m_downloads.removeAll(download);
 }
 
 QByteArray DownloadPackage::captcha() const

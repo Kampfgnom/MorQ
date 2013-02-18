@@ -8,10 +8,14 @@
 #include "model/downloadsitemmodel.h"
 #include "controller/downloadcontroller.h"
 
+#include <download.h>
+#include <downloadpackage.h>
+
 #include <QLabel>
 #include <QSettings>
 #include <QDebug>
 #include <QCloseEvent>
+#include <QMessageBox>
 
 static const QString WINDOWGEOMETRY("ui/mainwindow/geometry");
 static const QString WINDOWSTATE("ui/mainwindow/state");
@@ -46,10 +50,14 @@ MainWindow::MainWindow(QWidget *parent) :
     m_statusMessageLabel = new QLabel(this);
     statusBar()->addWidget(m_statusMessageLabel);
 
+    m_downloadsModel = new DownloadsItemModel(this);
+
     ui->treeViewDownloads->setAttribute(Qt::WA_MacShowFocusRect, false);
-    ui->treeViewDownloads->setModel(new DownloadsItemModel(this));
-    ui->treeViewDownloads->setItemDelegateForColumn(DownloadsItemModel::ProgressColumn, new DownloadsItemDelegate(this));
-    ui->treeViewDownloads->setItemDelegateForColumn(DownloadsItemModel::UserInputColumn, new DownloadsItemDelegate(this));
+    ui->treeViewDownloads->setModel(m_downloadsModel);
+    ui->treeViewDownloads->setItemDelegate(new DownloadsItemDelegate(this));
+    ui->treeViewDownloads->setContextMenuPolicy(Qt::ActionsContextMenu);
+    ui->treeViewDownloads->addAction(ui->actionDeleteDownload);
+    ui->treeViewDownloads->addAction(ui->actionResetDownload);
 
     QSettings settings;
     restoreGeometry(settings.value(WINDOWGEOMETRY, "").toByteArray());
@@ -153,4 +161,51 @@ void MainWindow::on_actionPremiumizeMe_Preferences_triggered()
 void MainWindow::on_actionStart_triggered()
 {
     Controller::downloads()->startDownloads();
+}
+
+void MainWindow::on_actionDeleteDownload_triggered()
+{
+//    QMessageBox confirmDialog(this);
+//    confirmDialog.setText(tr("Do you really want to remove the selected downloads?"));
+//    confirmDialog.setWindowTitle(tr("Confirm remove"));
+//    confirmDialog.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+//    confirmDialog.setDefaultButton(QMessageBox::Yes);
+
+
+    QModelIndexList list = ui->treeViewDownloads->selectionModel()->selectedRows();
+
+    QList<Download *> selectedDownloads;
+    QList<DownloadPackage *> selectedPackages;
+
+    foreach(QModelIndex index, list) {
+        if(index.parent().isValid()) {
+            selectedDownloads.append(m_downloadsModel->downloadByIndex(index));
+        }
+        else if(!index.parent().isValid()) {
+            selectedPackages.append(m_downloadsModel->packageByIndex(index));
+        }
+    }
+
+//    QString informativeText(tr("Packages:\n"));
+//    foreach(DownloadPackage *package, selectedPackages) {
+//        informativeText += package->name() + "\n";
+//    }
+//    informativeText += tr("Downloads:\n");
+//    foreach(Download *dl, selectedDownloads) {
+//        informativeText += dl->fileName() + "\n";
+//    }
+//    confirmDialog.setInformativeText(informativeText);
+//    int result = confirmDialog.exec();
+//    if(result != QMessageBox::Yes)
+//        return;
+
+    foreach(Download *dl, selectedDownloads) {
+        if(dl)
+            Controller::downloads()->removeDownload(dl);
+    }
+
+    foreach(DownloadPackage *package, selectedPackages) {
+        if(package)
+            Controller::downloads()->removePackage(package);
+    }
 }

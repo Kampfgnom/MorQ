@@ -11,6 +11,7 @@ class MainWindow;
 
 class QLabel;
 class PreferencesWindow;
+class DownloadsItemModel;
 
 class MainWindow : public QMainWindow
 {
@@ -38,6 +39,8 @@ private slots:
 
     void on_actionStart_triggered();
 
+    void on_actionDeleteDownload_triggered();
+
 private:
     static MainWindow *s_instance;
     explicit MainWindow(QWidget *parent = 0);
@@ -45,6 +48,7 @@ private:
     Ui::MainWindow *ui;
 
     PreferencesWindow *m_preferencesWindow;
+    DownloadsItemModel *m_downloadsModel;
 
     bool m_busy;
     QLabel *m_busyLabel;

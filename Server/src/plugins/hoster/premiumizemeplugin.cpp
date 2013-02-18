@@ -26,7 +26,8 @@ bool PremuimizeMePlugin::canHandleUrl(const QUrl &url) const
         return false;
 
     if(url.host() == QLatin1String("uploaded.to")
-            || url.host() == QLatin1String("uploaded.net"))
+            || url.host() == QLatin1String("uploaded.net")
+            || url.host() == QLatin1String("ul.to"))
         return true;
 
     return false;

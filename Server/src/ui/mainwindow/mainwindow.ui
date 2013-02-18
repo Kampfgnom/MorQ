@@ -237,6 +237,8 @@ background-color: rgb(227,227,227);
      <string>Downloads</string>
     </property>
     <addaction name="actionStart"/>
+    <addaction name="actionDeleteDownload"/>
+    <addaction name="actionResetDownload"/>
    </widget>
    <addaction name="menuDownloads"/>
    <addaction name="menuView"/>
@@ -291,6 +293,19 @@ background-color: rgb(227,227,227);
    </property>
    <property name="toolTip">
     <string>Start Downloads</string>
+   </property>
+  </action>
+  <action name="actionDeleteDownload">
+   <property name="text">
+    <string>Delete</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Backspace</string>
+   </property>
+  </action>
+  <action name="actionResetDownload">
+   <property name="text">
+    <string>Reset</string>
    </property>
   </action>
  </widget>

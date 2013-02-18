@@ -68,21 +68,7 @@ qint64 DownloaderData::BUFFERSIZE = (2 << 18);
 
 Downloader::~Downloader()
 {
-    if(data->reply) {
-        data->reply->disconnect();
-        data->reply->abort();
-        data->reply->deleteLater();
-    }
-
-    if(data->file) {
-        data->file->flush();
-        data->file->close();
-        data->file->deleteLater();
-    }
-
-    if(data->buffer) {
-        delete[] data->buffer;
-    }
+    abortDownload();
 }
 
 QString Downloader::destinationFolder() const
@@ -189,6 +175,7 @@ void Downloader::startDownload()
         data->reply->abort();
         data->reply->disconnect();
         data->reply->deleteLater();
+        data->reply = nullptr;
     }
 
     if(data->redirectedUrl.isEmpty())
@@ -209,6 +196,26 @@ void Downloader::startDownload()
         setErrorString("Network error: "+data->reply->errorString());
     });
     emit started();
+}
+
+void Downloader::abortDownload()
+{
+    if(data->reply) {
+        data->reply->abort();
+        data->reply->disconnect();
+        data->reply->deleteLater();
+        data->reply = nullptr;
+    }
+
+    if(data->file) {
+        data->file->flush();
+        data->file->close();
+        data->file->deleteLater();
+    }
+
+    if(data->buffer) {
+        delete[] data->buffer;
+    }
 }
 
 bool Downloader::isStarted() const

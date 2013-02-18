@@ -32,13 +32,7 @@ DownloadsItemModel::DownloadsItemModel(QObject *parent) :
             this, &DownloadsItemModel::removePackage);
 
     foreach(QObject *object, Controller::downloadPackagesDao()->readAllObjects()) {
-        DownloadPackage *package = static_cast<DownloadPackage *>(object);
-        m_packageRows.insert(package, m_packagesCache.size());
-        m_packagesCache.append(package);
-
-        foreach(Download *dl, package->downloads()) {
-            m_downloadsCache[dl] = package;
-        }
+        insertPackage(object);
     }
 }
 
@@ -70,7 +64,9 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
     static QTime eta;
 
     if(!index.parent().isValid()) {
-        DownloadPackage *package = m_packagesCache.at(index.row());
+        DownloadPackage *package = packageByIndex(index);
+        if(!package)
+            return QVariant();
 
         if(role == Qt::DisplayRole) {
             switch(index.column()) {
@@ -143,8 +139,7 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
         }
     }
     else if(!index.parent().parent().isValid()) {
-        DownloadPackage *package = m_packagesCache.at(index.parent().row());
-        Download *dl = package->downloads().at(index.row());
+        Download *dl = downloadByIndex(index);
 
         if(role == Qt::DisplayRole) {
             switch(index.column()) {
@@ -204,7 +199,7 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
             }
             else {
                 QTemporaryFile file(QString("XXXXXX").append(dl->fileName())); // XXXXXX so that QTemporaryFile does not append these
-                                                                               // which would overwrite the original extension
+                // which would overwrite the original extension
                 file.open(); // Open, because QFileIconProvider only works for existing files... This little fucker
                 QFileInfo info(file);
                 icon = provider.icon(info);
@@ -263,9 +258,12 @@ QVariant DownloadsItemModel::headerData(int section, Qt::Orientation orientation
 int DownloadsItemModel::rowCount(const QModelIndex &parent) const
 {
     if(!parent.isValid())
-        return m_packagesCache.size();
+        return m_packages.size();
 
-    DownloadPackage *package = m_packagesCache.at(parent.row());
+    DownloadPackage *package = packageByIndex(parent);
+    if(!package)
+        return 0;
+
     return package->downloads().size();
 }
 
@@ -280,11 +278,25 @@ bool DownloadsItemModel::hasChildren(const QModelIndex &parent) const
     if(!parent.isValid())
         return true;
 
-    DownloadPackage *package = qobject_cast<DownloadPackage *>(static_cast<DownloadPackage *>(parent.internalPointer()));
+    DownloadPackage *package = packageByIndex(parent);
     if(!package)
         return false;
 
     return !package->downloads().isEmpty();
+}
+
+QModelIndex DownloadsItemModel::index(int row, int column, const QModelIndex &parent) const
+{
+    if(!hasIndex(row, column, parent))
+        return QModelIndex();
+
+    if(parent.isValid()) {
+        DownloadPackage *package = packageByIndex(parent);
+        return createIndex(row, column, package->downloads().at(row));
+    }
+
+    DownloadPackage *package = m_packages.at(row);
+    return createIndex(row, column, package);
 }
 
 QModelIndex DownloadsItemModel::parent(const QModelIndex &child) const
@@ -292,120 +304,165 @@ QModelIndex DownloadsItemModel::parent(const QModelIndex &child) const
     if(!child.isValid())
         return QModelIndex();
 
-    DownloadPackage *package = qobject_cast<DownloadPackage *>(static_cast<DownloadPackage *>(child.internalPointer()));
+    DownloadPackage *package = packageByIndex(child);
     if(package)
         return QModelIndex();
 
-    Download *download =  qobject_cast<Download *>(static_cast<Download *>(child.internalPointer()));
-    if(download) {
-        package = download->package();
-        return index(m_packageRows.value(package), 0, QModelIndex());
-    }
+    Download *download = downloadByIndex(child);
+    if(!download)
+        return QModelIndex();
 
-    return QModelIndex();
+    package = download->package();
+    if(!package || !m_packageRows.contains(package))
+        return QModelIndex();
+
+    return createIndex(m_packageRows.value(package), 0, package);
 }
 
-QModelIndex DownloadsItemModel::index(int row, int column, const QModelIndex &parent) const
+Download *DownloadsItemModel::downloadByIndex(const QModelIndex &index) const
 {
-    if(!parent.isValid())
-        return createIndex(row, column, m_packagesCache.at(row));
-    else if(parent.isValid()) {
-        DownloadPackage *package = m_packagesCache.at(parent.row());
-        return createIndex(row, column, package->downloads().at(row));
-    }
+    Download *download = static_cast<Download *>(index.internalPointer());
+    if(!m_downloadRows.contains(download))
+        return nullptr;
 
-    return QModelIndex();
+    return download;
+}
+
+DownloadPackage *DownloadsItemModel::packageByIndex(const QModelIndex &index) const
+{
+    DownloadPackage *package = static_cast<DownloadPackage *>(index.internalPointer());
+    if(!m_packageRows.contains(package))
+        return nullptr;
+
+    return package;
 }
 
 void DownloadsItemModel::insertPackage(QObject *object)
 {
-    beginInsertRows(QModelIndex(), m_packagesCache.size(), m_packagesCache.size());
-    DownloadPackage *insertedPackage = static_cast<DownloadPackage *>(object);
-    m_packageRows.insert(insertedPackage, m_packagesCache.size());
-    m_packagesCache.append(insertedPackage);
+    beginInsertRows(QModelIndex(), m_packages.size(), m_packages.size());
 
-    foreach(Download *dl, insertedPackage->downloads()) {
-        m_downloadsCache[dl] = insertedPackage;
-    }
+    DownloadPackage *package = static_cast<DownloadPackage *>(object);
+    _insertPackage(package);
+
     endInsertRows();
+}
+
+void DownloadsItemModel::_insertPackage(DownloadPackage *package)
+{
+    m_packageRows.insert(package, m_packages.size());
+    m_packages.append(package);
+
+    foreach(Download *dl, package->downloads()) {
+        _insertDownload(dl);
+    }
 }
 
 void DownloadsItemModel::updatePackage(QObject *object)
 {
-    QMutableListIterator<DownloadPackage *> it(m_packagesCache);
-    int i = 0;
-    while(it.hasNext()) {
-        it.next();
-        if(it.value() == object) {
-            emit dataChanged(index(i, 0,QModelIndex()),
-                             index(i, columnCount(QModelIndex()),QModelIndex()));
-            return;
-        }
-        ++i;
+    DownloadPackage *package = static_cast<DownloadPackage *>(object);
+    if(!m_packageRows.contains(package))
+        return;
+
+    int i = m_packageRows[package];
+    emit dataChanged(index(i, 0),
+                     index(i, columnCount()));
+
+    foreach(Download *dl, package->downloads()) {
+        _removeDownload(dl);
+        _insertDownload(dl);
     }
 }
 
 void DownloadsItemModel::removePackage(QObject *object)
 {
-    QMutableListIterator<DownloadPackage *> it(m_packagesCache);
+    DownloadPackage *package = static_cast<DownloadPackage *>(object);
+    if(!m_packageRows.contains(package))
+        return;
+
+    int index = m_packageRows[package];
+
+    beginRemoveRows(QModelIndex(), index, index);
+
+    m_packages.removeAt(index);
+
     int i = 0;
-    while(it.hasNext()) {
-        it.next();
-        if(it.value() == object) {
-            beginRemoveRows(QModelIndex(), i, i);
-            m_packageRows.remove(it.value());
-            it.remove();
-            endRemoveRows();
-            return;
-        }
+    foreach(DownloadPackage *p, m_packages) {
+        m_packageRows.remove(p);
+        m_packageRows.insert(p, i);
         ++i;
     }
+
+    foreach(Download *dl, package->downloads()) {
+        _removeDownload(dl);
+    }
+    endRemoveRows();
 }
 
 void DownloadsItemModel::insertDownload(QObject *object)
 {
     Download *download = static_cast<Download *>(object);
-
-    if(!download->package())
-        return;
-
-    int index = download->package()->downloads().indexOf(download);
-    if(index < 0)
+    if(!download || !download->package())
         return;
 
     QModelIndex parent = indexForPackage(download->package());
+    int index = download->order();
 
     beginInsertRows(parent, index, index);
+
+    _insertDownload(download);
+
     endInsertRows();
+}
+
+void DownloadsItemModel::_insertDownload(Download *download)
+{
+    m_downloadRows.insert(download, download->order());
 }
 
 void DownloadsItemModel::updateDownload(QObject *object)
 {
     Download *download = static_cast<Download *>(object);
-
-    if(!download->package())
-        return;
-    int i = download->package()->downloads().indexOf(download);
-    if(i < 0)
-        return;
-
     QModelIndex parent = indexForPackage(download->package());
 
-    if(m_downloadsCache[download] != download->package()) {
-
-        beginInsertRows(parent, i, i);
+    if(!m_downloadRows.contains(download)) {
+        int index = download->order();
+        beginInsertRows(parent, index, index);
+        _insertDownload(download);
         endInsertRows();
-
-        return;
     }
+    else {
+        int i = m_downloadRows[download];
 
-    emit dataChanged(index(i,0,parent),
-                     index(i,columnCount(parent), parent));
+        emit dataChanged(index(i, 0, parent),
+                         index(i, columnCount(), parent));
+    }
 }
 
 void DownloadsItemModel::removeDownload(QObject *object)
 {
+    Download *download = static_cast<Download *>(object);
+    QModelIndex parent = indexForPackage(download->package());
+    int i = m_downloadRows[download];
+
+    beginRemoveRows(parent, i, i);
+
+    _removeDownload(download);
+
+    endRemoveRows();
 }
+
+void DownloadsItemModel::_removeDownload(Download *download)
+{
+    int i = 0;
+    foreach(Download *dl, download->package()->downloads()) {
+        m_downloadRows.remove(dl);
+        if(dl != download) {
+            m_downloadRows.insert(dl, i);
+            ++i;
+        }
+    }
+}
+
 
 QString DownloadsItemModel::humanReadableSize(qint64 bytes) const
 {
@@ -447,5 +504,8 @@ QString DownloadsItemModel::humanReadableSize(qint64 bytes) const
 
 QModelIndex DownloadsItemModel::indexForPackage(DownloadPackage *package) const
 {
+    if(!package)
+        return QModelIndex();
+
     return createIndex(m_packageRows.value(package), 0, package);
 }

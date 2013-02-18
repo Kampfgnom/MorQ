@@ -32,6 +32,7 @@ public:
 
     void getMetaData();
     void startDownload();
+    void abortDownload();
     bool isStarted() const;
 
     int bytesWritten() const;

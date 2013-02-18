@@ -1,5 +1,7 @@
 #include "download.h"
 
+#include "downloadpackage.h"
+
 #include <QTime>
 #include <QDebug>
 
@@ -20,6 +22,11 @@ Download::Download(QObject *parent) :
     m_speedTimer(QElapsedTimer()),
     m_bytesDownloadedAtLastSpeedMeasurement(-1)
 {
+}
+
+Download::~Download()
+{
+    qDebug() << "~Download(" << m_id << ")=" << this;
 }
 
 int Download::id() const
@@ -101,6 +108,11 @@ qint64 Download::fileSize() const
 void Download::setFileSize(qint64 bytes)
 {
     m_fileSize = bytes;
+}
+
+int Download::order() const
+{
+    return m_package->downloads().indexOf(const_cast<Download *const>(this));
 }
 
 qint64 Download::bytesDownloaded() const
