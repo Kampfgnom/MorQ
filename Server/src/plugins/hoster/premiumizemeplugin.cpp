@@ -125,6 +125,10 @@ void PremiumizeMeDownloadHandler::download()
         Controller::downloadsDao()->update(m_download);
     });
 
+    QObject::connect(m_download, &QObject::destroyed, [=]() {
+        disconnect(connection);
+    });
+
     QObject::connect(m_downloader, &Downloader::error, [=]() {
         disconnect(connection);
     });

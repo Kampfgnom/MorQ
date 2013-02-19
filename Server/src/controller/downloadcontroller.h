@@ -22,6 +22,9 @@ public:
 
     bool isDownloadRunning();
 
+signals:
+    void statusChanged();
+
 private:
     friend class Controller;
     explicit DownloadController(QObject *parent = 0);

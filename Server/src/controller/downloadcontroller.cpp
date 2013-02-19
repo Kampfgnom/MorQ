@@ -40,13 +40,16 @@ bool DownloadController::startNextDownload()
 {
     // find the next download
     Download *dl = findNextUnfinishedDownload();
-    if(!dl)
+    if(!dl) {
+        emit statusChanged();
         return false;
+    }
 
     foreach(HosterPlugin *hoster, Controller::plugins()->hosterPlugins()) {
         if(hoster->canHandleUrl(dl->url())) {
             Downloader *downloader = hoster->handleDownload(dl);
             m_runningDownloaders.insert(dl->id(), downloader);
+            m_runningDownloads.append(dl);
 
             connect(dl, &Download::finished, [=]() {
                 m_runningDownloaders.remove(dl->id());
@@ -62,6 +65,7 @@ bool DownloadController::startNextDownload()
                 }
             });
 
+            emit statusChanged();
             return true;
         }
     }
@@ -71,15 +75,21 @@ bool DownloadController::startNextDownload()
 
 void DownloadController::removeDownload(Download *download)
 {
-    stopDownload(download);
+    bool wasRunning = false;
+
+    if(m_runningDownloaders.contains(download->id())) {
+        stopDownload(download);
+        wasRunning = true;
+    }
 
     Controller::downloadsDao()->remove(download);
 
-    qDebug() << "TEST1";
     if(download->package()) {
         download->package()->removeDownload(download);
     }
-    qDebug() << "TEST2";
+
+    if(wasRunning)
+        startDownloads();
 }
 
 void DownloadController::removePackage(DownloadPackage *package)
@@ -93,11 +103,19 @@ void DownloadController::removePackage(DownloadPackage *package)
 
 void DownloadController::resetDownload(Download *download)
 {
+    bool wasRunning = false;
+
+    if(m_runningDownloaders.contains(download->id())) {
+        stopDownload(download);
+        wasRunning = true;
+    }
+
     QFile file(Preferences::downloadFolder() + QDir::separator() + download->fileName());
     if(file.exists())
         file.remove();
 
     download->reset();
+    Controller::downloadsDao()->update(download);
     foreach(HosterPlugin *hoster, Controller::plugins()->hosterPlugins()) {
         if(hoster->canHandleUrl(download->url())) {
             hoster->getDownloadInformation(download);
@@ -105,7 +123,8 @@ void DownloadController::resetDownload(Download *download)
         }
     }
 
-    if(isDownloadRunning())
+    if(wasRunning
+            || isDownloadRunning())
         startDownloads();
 }
 
@@ -120,7 +139,6 @@ bool DownloadController::isDownloadRunning()
 {
     return !m_runningDownloaders.isEmpty();
 }
-
 
 void DownloadController::startDownloads()
 {
@@ -143,5 +161,7 @@ void DownloadController::stopDownload(Download *download)
         m_runningDownloaders.value(download->id())->abortDownload();
         m_runningDownloaders.remove(download->id());
         m_runningDownloads.removeAll(download);
+
+        emit statusChanged();
     }
 }

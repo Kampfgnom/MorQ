@@ -58,11 +58,19 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->treeViewDownloads->setContextMenuPolicy(Qt::ActionsContextMenu);
     ui->treeViewDownloads->addAction(ui->actionDeleteDownload);
     ui->treeViewDownloads->addAction(ui->actionResetDownload);
+    ui->treeViewDownloads->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    connect(ui->treeViewDownloads->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &MainWindow::onDownloadsSelectionChanged);
 
     QSettings settings;
     restoreGeometry(settings.value(WINDOWGEOMETRY, "").toByteArray());
     restoreState(settings.value(WINDOWSTATE, "").toByteArray());
     ui->treeViewDownloads->header()->restoreState(settings.value(DOWNLOADSHEADERSTATE, "").toByteArray());
+
+    connect(Controller::downloads(), &DownloadController::statusChanged,
+            this, &MainWindow::onDownloadControllerStatusChanged);
+
+    onDownloadsSelectionChanged();
 }
 
 MainWindow *MainWindow::instance()
@@ -163,6 +171,19 @@ void MainWindow::on_actionStart_triggered()
     Controller::downloads()->startDownloads();
 }
 
+void MainWindow::on_actionStopDownloads_triggered()
+{
+    Controller::downloads()->stopDownloads();
+}
+
+void MainWindow::onDownloadControllerStatusChanged()
+{
+    bool running = Controller::downloads()->isDownloadRunning();
+
+    ui->actionStart->setEnabled(!running);
+    ui->actionStopDownloads->setEnabled(running);
+}
+
 void MainWindow::on_actionDeleteDownload_triggered()
 {
     // TODO: confirmation
@@ -237,4 +258,12 @@ void MainWindow::on_actionResetDownload_triggered()
         if(package)
             Controller::downloads()->resetPackage(package);
     }
+}
+
+void MainWindow::onDownloadsSelectionChanged()
+{
+    bool sel = !ui->treeViewDownloads->selectionModel()->selectedRows().isEmpty();
+
+    ui->actionDeleteDownload->setEnabled(sel);
+    ui->actionResetDownload->setEnabled(sel);
 }

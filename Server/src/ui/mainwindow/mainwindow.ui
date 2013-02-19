@@ -237,6 +237,7 @@ background-color: rgb(227,227,227);
      <string>Downloads</string>
     </property>
     <addaction name="actionStart"/>
+    <addaction name="actionStopDownloads"/>
     <addaction name="actionDeleteDownload"/>
     <addaction name="actionResetDownload"/>
    </widget>
@@ -306,6 +307,14 @@ background-color: rgb(227,227,227);
   <action name="actionResetDownload">
    <property name="text">
     <string>Reset</string>
+   </property>
+  </action>
+  <action name="actionStopDownloads">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Stop</string>
    </property>
   </action>
  </widget>

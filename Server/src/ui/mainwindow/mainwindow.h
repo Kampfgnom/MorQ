@@ -43,6 +43,12 @@ private slots:
 
     void on_actionResetDownload_triggered();
 
+    void onDownloadsSelectionChanged();
+
+    void on_actionStopDownloads_triggered();
+
+    void onDownloadControllerStatusChanged();
+
 private:
     static MainWindow *s_instance;
     explicit MainWindow(QWidget *parent = 0);

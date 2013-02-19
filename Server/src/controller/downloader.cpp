@@ -162,6 +162,9 @@ void Downloader::getMetaData()
                      this, &Downloader::_metaDataChanged);
 
     QObject::connect(data->reply, ERRORSIGNAL, [=]() {
+        if(data->reply->error() == QNetworkReply::OperationCanceledError)
+            return;
+
         setErrorString("Network error: "+data->reply->errorString());
     });
 }
@@ -195,6 +198,9 @@ void Downloader::startDownload()
                      this, &Downloader::_metaDataChanged);
 
     QObject::connect(data->reply, ERRORSIGNAL, [=]() {
+        if(data->reply->error() == QNetworkReply::OperationCanceledError)
+            return;
+
         setErrorString("Network error: "+data->reply->errorString());
     });
     emit started();
@@ -270,7 +276,7 @@ void Downloader::_readAvailableBytes()
         if(data->file->exists()) {
             setErrorString(QString("File exists '%1'.")
                            .arg(data->file->fileName()));
-            emit error();
+            abortDownload();
             return;
         }
 
@@ -278,7 +284,7 @@ void Downloader::_readAvailableBytes()
             setErrorString(QString("Could not write to file '%1': %2")
                            .arg(data->file->fileName())
                            .arg(data->file->errorString()));
-            emit error();
+            abortDownload();
             return;
         }
     }
@@ -290,7 +296,7 @@ void Downloader::_readAvailableBytes()
     if(read == -1) {
         setErrorString(QString("Could not read from network: %2")
                        .arg(data->reply->errorString()));
-        emit error();
+        abortDownload();
         return;
     }
 
@@ -299,7 +305,7 @@ void Downloader::_readAvailableBytes()
         setErrorString(QString("Could not write to file '%1': %2")
                        .arg(data->file->fileName())
                        .arg(data->file->errorString()));
-        emit error();
+        abortDownload();
         return;
     }
     Q_ASSERT(read == write);
@@ -314,7 +320,9 @@ void Downloader::_finishedDownload()
 
     data->bytesWritten += bytesAvailable;
     qint64 write = data->file->write(data->reply->readAll());
-    Q_ASSERT(bytesAvailable == write);
+
+    if(data->reply->error() != QNetworkReply::OperationCanceledError)
+        Q_ASSERT(bytesAvailable == write);
 
     emit bytesWritten(bytesAvailable);
 
