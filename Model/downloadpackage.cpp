@@ -10,6 +10,8 @@ float DownloadPackage::s_speedAlpha(0.1);
 DownloadPackage::DownloadPackage(QObject *parent) :
     QObject(parent),
     m_id(0),
+    m_bytesExtracted(-1),
+    m_extractedFilesSize(-1),
     m_speed(0),
     m_weightedSpeed(0),
     m_speedTimer(QElapsedTimer()),
@@ -72,6 +74,13 @@ void DownloadPackage::addDownload(Download *download)
     if(m_downloads.contains(download))
         return;
 
+    connect(download, &Download::destroyed, [=]() {
+        m_downloads.removeAll(download);
+        disconnect(download, 0, this, 0);
+    });
+
+    connect(download, &Download::downloadFinished,
+            this, &DownloadPackage::maybeEmitDownloadFinished);
     download->setPackage(this);
     m_downloads.append(download);
 }
@@ -81,6 +90,7 @@ void DownloadPackage::removeDownload(Download *download)
     if(!m_downloads.contains(download))
         return;
 
+    disconnect(download, 0, this, 0);
     download->setPackage(nullptr);
     m_downloads.removeAll(download);
 }
@@ -108,6 +118,18 @@ void DownloadPackage::setCaptchaString(const QString &string)
 
 void DownloadPackage::setDownloads(const QList<Download *> downloads)
 {
+    foreach(Download *download, m_downloads){
+        disconnect(download, 0, this, 0);
+    }
+    foreach(Download *download, downloads){
+        connect(download, &Download::downloadFinished,
+                this, &DownloadPackage::maybeEmitDownloadFinished);
+        connect(download, &Download::destroyed, [=]() {
+            m_downloads.removeAll(download);
+            disconnect(download, 0, this, 0);
+        });
+    }
+
     m_downloads = downloads;
 }
 
@@ -133,6 +155,14 @@ qint64 DownloadPackage::bytesDownloaded() const
 
 double DownloadPackage::progress() const
 {
+    if(isExtracting())
+        return extractionProgress();
+
+    return downloadProgress();
+}
+
+double DownloadPackage::downloadProgress() const
+{
     qint64 byteDown = bytesDownloaded();
     qint64 total = totalFileSize();
     if(byteDown <= 0
@@ -142,9 +172,48 @@ double DownloadPackage::progress() const
     return double(byteDown) / double(total);
 }
 
-bool DownloadPackage::isFinished() const
+bool DownloadPackage::isDownloadFinished() const
 {
     return totalFileSize() == bytesDownloaded();
+}
+
+bool DownloadPackage::isExtracting() const
+{
+    return m_extractedFilesSize > 0 && m_bytesExtracted > 0;
+}
+
+bool DownloadPackage::isExtractionFinished() const
+{
+    return m_extractedFilesSize == m_bytesExtracted;
+}
+
+double DownloadPackage::extractionProgress() const
+{
+    if(m_extractedFilesSize <= 0
+            || m_bytesExtracted <= 0)
+        return 0.0;
+
+    return double(m_bytesExtracted) / double(m_extractedFilesSize);
+}
+
+qint64 DownloadPackage::bytesExtracted() const
+{
+    return m_bytesExtracted;
+}
+
+void DownloadPackage::setBytesExtracted(qint64 bytesExtracted)
+{
+    m_bytesExtracted = bytesExtracted;
+}
+
+qint64 DownloadPackage::extractedFileSize() const
+{
+    return m_extractedFilesSize;
+}
+
+void DownloadPackage::setExtractedFileSize(qint64 extractedFileSize)
+{
+    m_extractedFilesSize = extractedFileSize;
 }
 
 void DownloadPackage::calculateSpeed() const
@@ -154,7 +223,7 @@ void DownloadPackage::calculateSpeed() const
         return;
     }
 
-    if(isFinished()) {
+    if(isDownloadFinished()) {
         m_speed = 0;
         m_weightedSpeed = 0;
         m_eta = QTime();
@@ -164,7 +233,12 @@ void DownloadPackage::calculateSpeed() const
 
     qint64 elapsedTime = m_speedTimer.elapsed();
     if(elapsedTime > 100) {
-        qint64 bytes = bytesDownloaded();
+        qint64 bytes = 0;
+        if(isExtracting())
+            bytes = m_bytesExtracted;
+        else
+            bytes = bytesDownloaded();
+
         qint64 bytesWritten = bytes - m_bytesDownloadedAtLastSpeedMeasurement;
 
         if(bytesWritten == 0
@@ -210,6 +284,12 @@ void DownloadPackage::calculateSpeed() const
 
         m_eta = QTime(0,0,0);
         m_eta = m_eta.addSecs(int(bytesLeft / m_weightedSpeed));
+
+        QTime maxDownloadEta = QTime();
+        foreach(Download *dl, m_downloads) {
+            maxDownloadEta = qMax(dl->eta(), maxDownloadEta);
+        }
+        m_eta = qMax(maxDownloadEta, m_eta);
     }
 }
 
@@ -229,4 +309,11 @@ QTime DownloadPackage::eta() const
 {
     calculateSpeed();
     return m_eta;
+}
+
+
+void DownloadPackage::maybeEmitDownloadFinished()
+{
+    if(isDownloadFinished())
+        emit downloadFinished();
 }

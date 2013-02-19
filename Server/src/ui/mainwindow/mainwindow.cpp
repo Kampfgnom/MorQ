@@ -7,6 +7,7 @@
 #include "controller/controller.h"
 #include "model/downloadsitemmodel.h"
 #include "controller/downloadcontroller.h"
+#include "controller/extractioncontroller.h"
 
 #include <download.h>
 #include <downloadpackage.h>
@@ -58,6 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->treeViewDownloads->setContextMenuPolicy(Qt::ActionsContextMenu);
     ui->treeViewDownloads->addAction(ui->actionDeleteDownload);
     ui->treeViewDownloads->addAction(ui->actionResetDownload);
+    ui->treeViewDownloads->addAction(ui->actionExtract);
     ui->treeViewDownloads->setSelectionMode(QAbstractItemView::ExtendedSelection);
     connect(ui->treeViewDownloads->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &MainWindow::onDownloadsSelectionChanged);
@@ -266,4 +268,25 @@ void MainWindow::onDownloadsSelectionChanged()
 
     ui->actionDeleteDownload->setEnabled(sel);
     ui->actionResetDownload->setEnabled(sel);
+    ui->actionExtract->setEnabled(sel);
+}
+
+void MainWindow::on_actionExtract_triggered()
+{
+    QModelIndexList list = ui->treeViewDownloads->selectionModel()->selectedRows();
+    QSet<DownloadPackage *> selectedPackages;
+
+    foreach(QModelIndex index, list) {
+        if(index.parent().isValid()) {
+            selectedPackages.insert(m_downloadsModel->downloadByIndex(index)->package());
+        }
+        else if(!index.parent().isValid()) {
+            selectedPackages.insert(m_downloadsModel->packageByIndex(index));
+        }
+    }
+
+    foreach(DownloadPackage *package, selectedPackages) {
+        if(package)
+            Controller::extractor()->extractPackage(package);
+    }
 }

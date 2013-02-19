@@ -116,7 +116,10 @@ void PremiumizeMeDownloadHandler::download()
             this, &PremiumizeMeDownloadHandler::generateLinkReplyFinished);
 
     connect(this, &PremiumizeMeDownloadHandler::downloadInformationReady, [=]() {
-        m_downloader->setDestinationFolder(Preferences::downloadFolder());
+        m_download->setDestinationFolder(Preferences::downloadFolder());
+        Controller::downloadsDao()->update(m_download);
+
+        m_downloader->setDestinationFolder(m_download->destinationFolder());
         m_downloader->startDownload();
     });
 

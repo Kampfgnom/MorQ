@@ -22,11 +22,11 @@ Download *DownloadController::findNextUnfinishedDownload()
     QList<DownloadPackage *> packages = Controller::downloadPackagesDao()->readAll();
 
     foreach(DownloadPackage *package, packages) {
-        if(package->isFinished())
+        if(package->isDownloadFinished())
             continue;
 
         foreach(Download *dl , package->downloads()) {
-            if(!dl->isFinished()
+            if(!dl->isDownloadFinished()
                     && !m_runningDownloaders.contains(dl->id())
                     && dl->isEnabled())
                 return dl;
@@ -51,7 +51,7 @@ bool DownloadController::startNextDownload()
             m_runningDownloaders.insert(dl->id(), downloader);
             m_runningDownloads.append(dl);
 
-            connect(dl, &Download::finished, [=]() {
+            connect(dl, &Download::downloadFinished, [=]() {
                 m_runningDownloaders.remove(dl->id());
                 m_runningDownloads.removeAll(dl);
                 startNextDownload();
@@ -95,7 +95,8 @@ void DownloadController::removeDownload(Download *download)
 void DownloadController::removePackage(DownloadPackage *package)
 {
     foreach(Download *dl, package->downloads()) {
-        removeDownload(dl);
+        if(dl)
+            removeDownload(dl);
     }
 
     Controller::downloadPackagesDao()->remove(package);

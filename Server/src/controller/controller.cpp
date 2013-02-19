@@ -3,6 +3,7 @@
 #include "downloadcontroller.h"
 #include "plugincontroller.h"
 #include "linkscontroller.h"
+#include "extractioncontroller.h"
 
 #include <download.h>
 #include <downloadpackage.h>
@@ -51,6 +52,7 @@ bool Controller::initialize()
     plugins();
     links();
     downloads();
+    extractor();
 
     return true;
 }
@@ -91,6 +93,16 @@ LinksController *Controller::links()
 
     if(!controller)
         controller = new LinksController(&GUARD);
+
+    return controller;
+}
+
+ExtractionController *Controller::extractor()
+{
+    static ExtractionController *controller = nullptr;
+
+    if(!controller)
+        controller = new ExtractionController(&GUARD);
 
     return controller;
 }

@@ -238,8 +238,10 @@ background-color: rgb(227,227,227);
     </property>
     <addaction name="actionStart"/>
     <addaction name="actionStopDownloads"/>
+    <addaction name="separator"/>
     <addaction name="actionDeleteDownload"/>
     <addaction name="actionResetDownload"/>
+    <addaction name="actionExtract"/>
    </widget>
    <addaction name="menuDownloads"/>
    <addaction name="menuView"/>
@@ -290,7 +292,7 @@ background-color: rgb(227,227,227);
   </action>
   <action name="actionStart">
    <property name="text">
-    <string>Start</string>
+    <string>Start queue</string>
    </property>
    <property name="toolTip">
     <string>Start Downloads</string>
@@ -314,7 +316,12 @@ background-color: rgb(227,227,227);
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Stop</string>
+    <string>Stop all</string>
+   </property>
+  </action>
+  <action name="actionExtract">
+   <property name="text">
+    <string>Extract</string>
    </property>
   </action>
  </widget>

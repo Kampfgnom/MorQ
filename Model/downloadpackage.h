@@ -55,8 +55,19 @@ public:
     qint64 bytesDownloaded() const;
 
     double progress() const;
+    double downloadProgress() const;
 
-    bool isFinished() const;
+    bool isDownloadFinished() const;
+
+    bool isExtracting() const;
+    bool isExtractionFinished() const;
+    double extractionProgress() const;
+
+    qint64 bytesExtracted() const;
+    void setBytesExtracted(qint64 bytesExtracted);
+
+    qint64 extractedFileSize() const;
+    void setExtractedFileSize(qint64 extractedFileSize);
 
     qint64 speed() const;
     qint64 speedWeighted() const;
@@ -64,6 +75,10 @@ public:
 
 signals:
     void captchaStringChanged();
+    void downloadFinished();
+
+private slots:
+    void maybeEmitDownloadFinished();
 
 private:
     void setId(int id);
@@ -78,6 +93,9 @@ private:
     QUrl m_sourceUrl;
     QByteArray m_captcha;
     QString m_captchaString;
+
+    qint64 m_bytesExtracted;
+    qint64 m_extractedFilesSize;
 
     mutable qint64 m_speed;
     mutable qint64 m_weightedSpeed;

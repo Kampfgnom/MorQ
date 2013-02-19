@@ -17,10 +17,11 @@ Download::Download(QObject *parent) :
     m_bytesDownloaded(-1),
     m_package(nullptr),
     m_enabled(true),
+    m_extracting(false),
     m_speed(0),
     m_weightedSpeed(0),
     m_speedTimer(QElapsedTimer()),
-    m_bytesDownloadedAtLastSpeedMeasurement(-1)
+    m_bytesProcessedAtLastSpeedMeasurement(-1)
 {
 }
 
@@ -42,9 +43,10 @@ void Download::reset()
     m_fileSize = -1;
     m_bytesDownloaded = -1;
     m_enabled = true;
+    m_extracting = false;
     m_speed = 0;
     m_weightedSpeed = 0;
-    m_bytesDownloadedAtLastSpeedMeasurement = -1;
+    m_bytesProcessedAtLastSpeedMeasurement = -1;
 }
 
 QUrl Download::url() const
@@ -137,8 +139,8 @@ void Download::setBytesDownloaded(qint64 bytes)
 {    
     m_bytesDownloaded = bytes;
 
-    if(isFinished())
-        emit finished();
+    if(isDownloadFinished())
+        emit downloadFinished();
 }
 
 bool Download::isEnabled() const
@@ -152,7 +154,7 @@ void Download::setEnabled(bool e)
     emit enabled(e);
 }
 
-double Download::progress() const
+double Download::downloadProgress() const
 {
     if(m_bytesDownloaded <= 0
             || m_fileSize <= 0)
@@ -161,9 +163,19 @@ double Download::progress() const
     return double(m_bytesDownloaded) / double(m_fileSize);
 }
 
-bool Download::isFinished() const
+bool Download::isDownloadFinished() const
 {
-    return fileSize() == bytesDownloaded();
+    return m_fileSize == m_bytesDownloaded;
+}
+
+bool Download::isExtracting() const
+{
+    return m_extracting;
+}
+
+void Download::setExtracting(bool extracting)
+{
+    m_extracting = extracting;
 }
 
 void Download::calculateSpeed() const
@@ -173,7 +185,7 @@ void Download::calculateSpeed() const
         return;
     }
 
-    if(isFinished()) {
+    if(isDownloadFinished()) {
         m_speed = 0;
         m_weightedSpeed = 0;
         m_eta = QTime();
@@ -182,19 +194,19 @@ void Download::calculateSpeed() const
 
     qint64 elapsedTime = m_speedTimer.elapsed();
     if(elapsedTime > 100) {
-        qint64 bytesWritten = m_bytesDownloaded - m_bytesDownloadedAtLastSpeedMeasurement;
+        qint64 bytesProcessedSinceLastMeasurement = m_bytesDownloaded - m_bytesProcessedAtLastSpeedMeasurement;
 
-        if(bytesWritten == 0
+        if(bytesProcessedSinceLastMeasurement == 0
                 && elapsedTime < 3000)
             return;
 
-        if(m_bytesDownloadedAtLastSpeedMeasurement < 0) {
-            m_bytesDownloadedAtLastSpeedMeasurement = m_bytesDownloaded;
+        if(m_bytesProcessedAtLastSpeedMeasurement < 0) {
+            m_bytesProcessedAtLastSpeedMeasurement = m_bytesDownloaded;
             return;
         }
 
-        m_bytesDownloadedAtLastSpeedMeasurement = m_bytesDownloaded;
-        m_speed = bytesWritten * 1000 / elapsedTime;
+        m_bytesProcessedAtLastSpeedMeasurement = m_bytesDownloaded;
+        m_speed = bytesProcessedSinceLastMeasurement * 1000 / elapsedTime;
         m_speed = qMax(qint64(0), m_speed);
 
         if(m_weightedSpeed < 1000) // if weighted is less than 1kb/s just reset it.

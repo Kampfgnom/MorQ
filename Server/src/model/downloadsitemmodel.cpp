@@ -147,7 +147,7 @@ QVariant DownloadsItemModel::data(const QModelIndex &index, int role) const
                 return dl->fileName();
 
             case ProgressColumn:
-                return dl->progress(); // painting percentages is done by item delegate
+                return dl->downloadProgress(); // painting percentages is done by item delegate
 
             case FileSizeColumn:
                 return humanReadableSize(dl->fileSize());

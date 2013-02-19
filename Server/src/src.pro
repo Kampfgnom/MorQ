@@ -16,6 +16,9 @@ include($$QPERSISTENCE_PATH/QPersistence.pri)
 QSERIENJUNKIES_PATH = $$LIBPATH/QSerienJunkies
 include($$QSERIENJUNKIES_PATH/QSerienJunkies.pri)
 
+QUUNRAR_PATH = $$LIBPATH/QuunRar
+include($$QUUNRAR_PATH/QuunRar.pri)
+
 include(../../Model/Model.pri)
 
 ### General config ###
@@ -47,6 +50,12 @@ LIBS            += $$QSERIENJUNKIES_LIBS
 INCLUDEPATH     += $$QSERIENJUNKIES_INCLUDEPATH
 
 
+#### QuunRar ###
+
+LIBS            += $$QUUNRAR_LIBS
+INCLUDEPATH     += $$QUUNRAR_INCLUDEPATH
+
+
 #### QHttpServer ###
 
 #INCLUDEPATH     += $$QHTTPSERVER_INCLUDEPATH
@@ -75,7 +84,8 @@ HEADERS += \
     controller/linkscontroller.h \
     plugins/decrypter/decrypterplugin.h \
     plugins/decrypter/serienjunkiesdecrypterplugin.h \
-    ui/mainwindow/downloadsitemdelegate.h
+    ui/mainwindow/downloadsitemdelegate.h \
+    controller/extractioncontroller.h
 
 SOURCES += main.cpp \
     ui/mainwindow/mainwindow.cpp \
@@ -91,7 +101,8 @@ SOURCES += main.cpp \
     controller/linkscontroller.cpp \
     plugins/decrypter/decrypterplugin.cpp \
     plugins/decrypter/serienjunkiesdecrypterplugin.cpp \
-    ui/mainwindow/downloadsitemdelegate.cpp
+    ui/mainwindow/downloadsitemdelegate.cpp \
+    controller/extractioncontroller.cpp
 
 FORMS += \
     ui/mainwindow/mainwindow.ui \

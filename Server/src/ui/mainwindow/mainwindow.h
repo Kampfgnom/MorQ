@@ -49,6 +49,8 @@ private slots:
 
     void onDownloadControllerStatusChanged();
 
+    void on_actionExtract_triggered();
+
 private:
     static MainWindow *s_instance;
     explicit MainWindow(QWidget *parent = 0);

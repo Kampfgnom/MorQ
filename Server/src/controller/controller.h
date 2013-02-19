@@ -9,6 +9,7 @@ class QNetworkAccessManager;
 class Download;
 class DownloadPackage;
 class LinksController;
+class ExtractionController;
 
 class Controller
 {
@@ -18,6 +19,7 @@ public:
     static DownloadController *downloads();
     static PluginController *plugins();
     static LinksController *links();
+    static ExtractionController *extractor();
 
     static QDataSuite::CachedDataAccessObject<Download> *downloadsDao();
     static QDataSuite::CachedDataAccessObject<DownloadPackage> *downloadPackagesDao();

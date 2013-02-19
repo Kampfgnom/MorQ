@@ -44,22 +44,27 @@ void DownloadsItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem 
 
         int progress = 0;
 
+        QStyleOptionProgressBar progressBarOption;
+        progressBarOption.maximum = 100;
+
         if(!index.parent().isValid()) {
             DownloadPackage *package = static_cast<DownloadPackage *>(index.internalPointer());
             progress = package->progress() * 100;
         }
         else {
             Download *download = static_cast<Download *>(index.internalPointer());
-            progress = download->progress() * 100;
+            progress = download->downloadProgress() * 100;
+
+            // Show indetermined progressbar
+            if(download->isExtracting())
+                progressBarOption.maximum = 0;
         }
 
         QPoint topLeft = option.rect.topLeft() + QPoint(5, option.rect.height() / 2 - 10);
         QPoint bottomRight = option.rect.bottomRight() - QPoint(5, 0);
 
-        QStyleOptionProgressBar progressBarOption;
         progressBarOption.rect = QRect(topLeft, bottomRight);
         progressBarOption.minimum = 0;
-        progressBarOption.maximum = 100;
         progressBarOption.progress = progress;
 
         QApplication::style()->drawControl(QStyle::CE_ProgressBar,

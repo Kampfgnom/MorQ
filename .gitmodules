@@ -4,3 +4,6 @@
 [submodule "lib/QSerienJunkies"]
 	path = lib/QSerienJunkies
 	url = /Users/niklaswulf/Development/QSerienJunkies/QSerienJunkies
+[submodule "lib/QuunRar"]
+	path = lib/QuunRar
+	url = /Users/niklaswulf/Development/QuunRar/localRemote
