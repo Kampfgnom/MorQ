@@ -2,8 +2,8 @@
 
 #include "controller/controller.h"
 
-#include <download.h>
-#include <downloadpackage.h>
+#include "model/download.h"
+#include "model/downloadpackage.h"
 
 #include <QDataSuite/abstractdataaccessobject.h>
 #include <QDataSuite/metaobject.h>
@@ -258,7 +258,7 @@ QVariant DownloadsItemModel::headerData(int section, Qt::Orientation orientation
 int DownloadsItemModel::rowCount(const QModelIndex &parent) const
 {
     if(!parent.isValid())
-        return m_packages.size();
+        return Controller::downloadPackagesDao()->count();
 
     DownloadPackage *package = packageByIndex(parent);
     if(!package)
@@ -295,7 +295,7 @@ QModelIndex DownloadsItemModel::index(int row, int column, const QModelIndex &pa
         return createIndex(row, column, package->downloads().at(row));
     }
 
-    DownloadPackage *package = m_packages.at(row);
+    DownloadPackage *package = Controller::downloadPackagesDao()->readAll().at(row);
     return createIndex(row, column, package);
 }
 
@@ -339,7 +339,8 @@ DownloadPackage *DownloadsItemModel::packageByIndex(const QModelIndex &index) co
 
 void DownloadsItemModel::insertPackage(QObject *object)
 {
-    beginInsertRows(QModelIndex(), m_packages.size(), m_packages.size());
+    int count = Controller::downloadPackagesDao()->count();
+    beginInsertRows(QModelIndex(), count, count);
 
     DownloadPackage *package = static_cast<DownloadPackage *>(object);
     _insertPackage(package);
@@ -349,8 +350,7 @@ void DownloadsItemModel::insertPackage(QObject *object)
 
 void DownloadsItemModel::_insertPackage(DownloadPackage *package)
 {
-    m_packageRows.insert(package, m_packages.size());
-    m_packages.append(package);
+    m_packageRows.insert(package, Controller::downloadPackagesDao()->count());
 
     foreach(Download *dl, package->downloads()) {
         _insertDownload(dl);
@@ -383,10 +383,8 @@ void DownloadsItemModel::removePackage(QObject *object)
 
     beginRemoveRows(QModelIndex(), index, index);
 
-    m_packages.removeAt(index);
-
     int i = 0;
-    foreach(DownloadPackage *p, m_packages) {
+    foreach(DownloadPackage *p, Controller::downloadPackagesDao()->readAll()) {
         m_packageRows.remove(p);
         m_packageRows.insert(p, i);
         ++i;
@@ -484,6 +482,9 @@ QString DownloadsItemModel::humanReadableSize(qint64 bytes) const
     QString unit("B");
 
     switch(i) {
+    case 0:
+    default:
+        break;
     case 1:
         unit.prepend("K");
         break;
@@ -494,9 +495,16 @@ QString DownloadsItemModel::humanReadableSize(qint64 bytes) const
         unit.prepend("G");
         break;
     case 4:
-    default:
         unit.prepend("T");
         break;
+    case 5:
+        unit.prepend("P");
+        break;
+    case 6:
+        unit.prepend("E"); // Exabyte YEAAAHHHH! That physics class finally tought me something useful
+        break;
+
+    // Let us for now assume, that now one's gonna load faster than 1000 Exabytes per second ^^
     }
 
     return QString("%1 %2").arg(QString::number(result,'f',2)).arg(unit);

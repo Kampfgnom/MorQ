@@ -3,8 +3,8 @@
 #include "controller/controller.h"
 #include "controller/linkscontroller.h"
 
-#include <downloadpackage.h>
-#include <download.h>
+#include "model/downloadpackage.h"
+#include "model/download.h"
 
 #include <qserienjunkies.h>
 
@@ -17,6 +17,7 @@ static QRegularExpression LINK_REGEXP("http://[\\w\\.]*?serienjunkies\\.org/.*?/
 SerienJunkiesDecrypterPlugin::SerienJunkiesDecrypterPlugin(QObject *parent) :
     DecrypterPlugin(parent)
 {
+    QSerienJunkies::setNetworkAccessManager(Controller::networkAccessManager());
 }
 
 bool SerienJunkiesDecrypterPlugin::canHandleUrl(const QUrl &url) const

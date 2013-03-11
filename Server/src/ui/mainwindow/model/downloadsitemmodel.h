@@ -54,7 +54,6 @@ private slots:
     void removeDownload(QObject *object);
 
 private:
-    QList<DownloadPackage *> m_packages;
     QHash<DownloadPackage *, int> m_packageRows;
     QMap<Download *, int> m_downloadRows;
 

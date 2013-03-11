@@ -5,6 +5,8 @@
 #include "plugins/hoster/premiumizemeplugin.h"
 #include "plugins/decrypter/decrypterplugin.h"
 #include "plugins/decrypter/serienjunkiesdecrypterplugin.h"
+#include "plugins/downloadProviders/downloadproviderplugin.h"
+#include "plugins/downloadProviders/serienjunkiesproviderplugin.h"
 
 
 PluginController::PluginController(QObject *parent) :
@@ -12,6 +14,7 @@ PluginController::PluginController(QObject *parent) :
 {
     createHosterPlugins();
     createDecrypterPlugins();
+    createDownloadProviderPlugins();
 }
 
 QList<HosterPlugin *> PluginController::hosterPlugins() const
@@ -24,6 +27,11 @@ QList<DecrypterPlugin *> PluginController::decrypterPlugins() const
     return m_decrypterPlugins;
 }
 
+QList<DownloadProviderPlugin *> PluginController::downloadProviderPlugins() const
+{
+    return m_downloadProviderPlugins;
+}
+
 void PluginController::registerHoster(HosterPlugin *hoster)
 {
     m_hosterPlugins.append(hoster);
@@ -32,6 +40,11 @@ void PluginController::registerHoster(HosterPlugin *hoster)
 void PluginController::registerDecrypter(DecrypterPlugin *decrypter)
 {
     m_decrypterPlugins.append(decrypter);
+}
+
+void PluginController::registerDownloadProvider(DownloadProviderPlugin *provider)
+{
+    m_downloadProviderPlugins.append(provider);
 }
 
 void PluginController::createHosterPlugins()
@@ -49,4 +62,10 @@ void PluginController::createDecrypterPlugins()
 {
     SerienJunkiesDecrypterPlugin *plugin = new SerienJunkiesDecrypterPlugin(this);
     registerDecrypter(plugin);
+}
+
+void PluginController::createDownloadProviderPlugins()
+{
+    DownloadProviderPlugin *provider = new SerienjunkiesProviderPlugin(this);
+    registerDownloadProvider(provider);
 }

@@ -4,7 +4,7 @@
 #include "controller/downloader.h"
 #include "preferences.h"
 
-#include <download.h>
+#include "model/download.h"
 
 #include <QUrlQuery>
 #include <QNetworkReply>
@@ -154,7 +154,7 @@ Downloader *PremiumizeMeDownloadHandler::downloader() const
 
 void PremiumizeMeDownloadHandler::generateLinkReplyFinished()
 {
-    QNetworkReply *reply = static_cast< QNetworkReply *>(sender());
+    auto reply = static_cast< QNetworkReply *>(sender());
 
     QString data(QString::fromLatin1(reply->readAll()));
     reply->deleteLater();

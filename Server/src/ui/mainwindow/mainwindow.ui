@@ -114,7 +114,7 @@ border-bottom: 1px solid rgb(77,77,77);
            <number>0</number>
           </property>
           <item>
-           <widget class="QToolButton" name="downloadsButton">
+           <widget class="QToolButton" name="buttonDownloads">
             <property name="enabled">
              <bool>false</bool>
             </property>
@@ -135,6 +135,25 @@ border-bottom: 1px solid rgb(77,77,77);
             </property>
             <property name="checkable">
              <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="buttonSeries">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>70</width>
+              <height>70</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>TV Shows</string>
             </property>
            </widget>
           </item>
@@ -191,12 +210,92 @@ background-color: rgb(227,227,227);
 }</string>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
-          <widget class="QWidget" name="downloadsPage">
+          <widget class="QWidget" name="pageDownloads">
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
              <widget class="QTreeView" name="treeViewDownloads"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="pageSeries">
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QSplitter" name="splitter_2">
+              <property name="midLineWidth">
+               <number>1</number>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="opaqueResize">
+               <bool>false</bool>
+              </property>
+              <property name="handleWidth">
+               <number>1</number>
+              </property>
+              <widget class="QTreeView" name="treeViewSeries">
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Plain</enum>
+               </property>
+               <property name="lineWidth">
+                <number>0</number>
+               </property>
+               <property name="rootIsDecorated">
+                <bool>false</bool>
+               </property>
+               <property name="headerHidden">
+                <bool>true</bool>
+               </property>
+              </widget>
+              <widget class="QTreeView" name="treeViewSeasons">
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Plain</enum>
+               </property>
+               <property name="lineWidth">
+                <number>0</number>
+               </property>
+               <property name="rootIsDecorated">
+                <bool>false</bool>
+               </property>
+               <property name="headerHidden">
+                <bool>true</bool>
+               </property>
+              </widget>
+              <widget class="QTreeView" name="treeViewEpisodes">
+               <property name="frameShape">
+                <enum>QFrame::NoFrame</enum>
+               </property>
+               <property name="rootIsDecorated">
+                <bool>false</bool>
+               </property>
+               <attribute name="headerVisible">
+                <bool>false</bool>
+               </attribute>
+              </widget>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -223,6 +322,7 @@ background-color: rgb(227,227,227);
     </property>
     <addaction name="separator"/>
     <addaction name="actionDownloads"/>
+    <addaction name="actionTV_Shows"/>
    </widget>
    <widget class="QMenu" name="menuExtras">
     <property name="title">
@@ -243,7 +343,14 @@ background-color: rgb(227,227,227);
     <addaction name="actionResetDownload"/>
     <addaction name="actionExtract"/>
    </widget>
+   <widget class="QMenu" name="menuTV_Shows">
+    <property name="title">
+     <string>TV Shows</string>
+    </property>
+    <addaction name="actionAdd_show"/>
+   </widget>
    <addaction name="menuDownloads"/>
+   <addaction name="menuTV_Shows"/>
    <addaction name="menuView"/>
    <addaction name="menuExtras"/>
   </widget>
@@ -255,7 +362,7 @@ background-color: rgb(227,227,227);
     </size>
    </property>
    <property name="sizeGripEnabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
   </widget>
   <action name="actionDownloads">
@@ -322,6 +429,25 @@ background-color: rgb(227,227,227);
   <action name="actionExtract">
    <property name="text">
     <string>Extract</string>
+   </property>
+  </action>
+  <action name="actionTV_Shows">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>TV Shows</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+2</string>
+   </property>
+  </action>
+  <action name="actionAdd_show">
+   <property name="text">
+    <string>Add show...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
  </widget>

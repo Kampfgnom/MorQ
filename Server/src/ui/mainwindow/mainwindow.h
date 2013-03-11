@@ -12,6 +12,9 @@ class MainWindow;
 class QLabel;
 class PreferencesWindow;
 class DownloadsItemModel;
+class SeriesListModel;
+class SeasonsListModel;
+class EpisodesListModel;
 
 class MainWindow : public QMainWindow
 {
@@ -19,37 +22,29 @@ class MainWindow : public QMainWindow
     
 public:
     static MainWindow *instance();
-
     ~MainWindow();
-    
-    bool isBusy() const;
-    void setBusy(bool busy);
-    void setStatusMessage(const QString &message);
-
-    void closeEvent(QCloseEvent *);
 
 private slots:
     void on_actionDownloads_triggered();
+    void on_actionTV_Shows_triggered();
 
     void on_actionPreferences_triggered();
-
     void on_actionDownload_Preferences_triggered();
-
     void on_actionPremiumizeMe_Preferences_triggered();
 
     void on_actionStart_triggered();
-
     void on_actionDeleteDownload_triggered();
-
     void on_actionResetDownload_triggered();
-
-    void onDownloadsSelectionChanged();
-
     void on_actionStopDownloads_triggered();
-
-    void onDownloadControllerStatusChanged();
-
     void on_actionExtract_triggered();
+
+    void enableActionsAccordingToDownloadSelection();
+    void enableActionsAccordingToDownloadStatus();
+
+    void on_actionAdd_show_triggered();
+
+    void showSeasonsForSelectedSeries();
+    void showEpisodesForSelectedSeason();
 
 private:
     static MainWindow *s_instance;
@@ -59,11 +54,9 @@ private:
 
     PreferencesWindow *m_preferencesWindow;
     DownloadsItemModel *m_downloadsModel;
-
-    bool m_busy;
-    QLabel *m_busyLabel;
-    QMovie m_movieBusy;
-    QLabel *m_statusMessageLabel;
+    SeriesListModel *m_seriesModel;
+    SeasonsListModel *m_seasonsModel;
+    EpisodesListModel *m_episodesModel;
 };
 
 #endif // MAINWINDOW_H

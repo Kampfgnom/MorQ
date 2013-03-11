@@ -3,8 +3,8 @@
 #include "model/downloadsitemmodel.h"
 #include "mainwindow.h"
 
-#include <downloadpackage.h>
-#include <download.h>
+#include "model/downloadpackage.h"
+#include "model/download.h"
 
 #include <QPainter>
 #include <QVBoxLayout>

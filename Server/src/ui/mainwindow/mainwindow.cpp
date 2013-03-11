@@ -2,15 +2,20 @@
 #include "ui_mainwindow.h"
 
 #include "downloadsitemdelegate.h"
+#include "serieslistitemdelegate.h"
+#include "model/downloadsitemmodel.h"
+#include "model/serieslistmodel.h"
+#include "model/seasonslistmodel.h"
+#include "model/episodeslistmodel.h"
 
+#include "ui/dialogs/newserieswizard.h"
 #include "ui/preferences/preferenceswindow.h"
 #include "controller/controller.h"
-#include "model/downloadsitemmodel.h"
 #include "controller/downloadcontroller.h"
 #include "controller/extractioncontroller.h"
 
-#include <download.h>
-#include <downloadpackage.h>
+#include "model/download.h"
+#include "model/downloadpackage.h"
 
 #include <QLabel>
 #include <QSettings>
@@ -21,36 +26,26 @@
 static const QString WINDOWGEOMETRY("ui/mainwindow/geometry");
 static const QString WINDOWSTATE("ui/mainwindow/state");
 static const QString DOWNLOADSHEADERSTATE("ui/mainwindow/downloads/headerstate");
+static const QString SERIESPAGESPLITTERSTATE("ui/mainwindow/series/splitterstate");
 
 MainWindow *MainWindow::s_instance = 0;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_preferencesWindow(nullptr),
-    m_movieBusy(QLatin1String(":animations/busy_small"))
+    m_preferencesWindow(nullptr)
 {
     ui->setupUi(this);
 
-    QButtonGroup *sideBarButtonGroup = new QButtonGroup(ui->sideBar);
-    sideBarButtonGroup->addButton(ui->downloadsButton);
-    ui->downloadsButton->setDefaultAction(ui->actionDownloads);
+    // Init actions for sidebar and menu
+    ui->buttonDownloads->setDefaultAction(ui->actionDownloads);
+    ui->buttonSeries->setDefaultAction(ui->actionTV_Shows);
 
     QActionGroup *viewActionGroup = new QActionGroup(this);
     viewActionGroup->addAction(ui->actionDownloads);
+    viewActionGroup->addAction(ui->actionTV_Shows);
 
-    QWidget *spacer = new QWidget(this);
-    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    statusBar()->addWidget(spacer, 1);
-
-    m_busyLabel = new QLabel(this);
-    m_busyLabel->setMovie(&m_movieBusy);
-    statusBar()->addWidget(m_busyLabel);
-    m_busyLabel->setVisible(false);
-
-    m_statusMessageLabel = new QLabel(this);
-    statusBar()->addWidget(m_statusMessageLabel);
-
+    // Init downloads page
     m_downloadsModel = new DownloadsItemModel(this);
 
     ui->treeViewDownloads->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -62,17 +57,39 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->treeViewDownloads->addAction(ui->actionExtract);
     ui->treeViewDownloads->setSelectionMode(QAbstractItemView::ExtendedSelection);
     connect(ui->treeViewDownloads->selectionModel(), &QItemSelectionModel::selectionChanged,
-            this, &MainWindow::onDownloadsSelectionChanged);
+            this, &MainWindow::enableActionsAccordingToDownloadSelection);
 
+    // Init series page
+    m_seriesModel = new SeriesListModel(this);
+    ui->treeViewSeries->setAttribute(Qt::WA_MacShowFocusRect, false);
+    ui->treeViewSeries->setModel(m_seriesModel);
+    ui->treeViewSeries->setItemDelegate(new SeriesListItemDelegate(this));
+
+    m_seasonsModel = new SeasonsListModel(this);
+    ui->treeViewSeasons->setAttribute(Qt::WA_MacShowFocusRect, false);
+    ui->treeViewSeasons->setModel(m_seasonsModel);
+
+    m_episodesModel = new EpisodesListModel(this);
+    ui->treeViewEpisodes->setAttribute(Qt::WA_MacShowFocusRect, false);
+    ui->treeViewEpisodes->setModel(m_episodesModel);
+
+    connect(ui->treeViewSeries->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &MainWindow::showSeasonsForSelectedSeries);
+
+    connect(ui->treeViewSeasons->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &MainWindow::showEpisodesForSelectedSeason);
+
+    // Restore settings
     QSettings settings;
     restoreGeometry(settings.value(WINDOWGEOMETRY, "").toByteArray());
     restoreState(settings.value(WINDOWSTATE, "").toByteArray());
     ui->treeViewDownloads->header()->restoreState(settings.value(DOWNLOADSHEADERSTATE, "").toByteArray());
+//    ui->splitter_2->restoreState(settings.value(SERIESPAGESPLITTERSTATE, "").toByteArray());
 
     connect(Controller::downloads(), &DownloadController::statusChanged,
-            this, &MainWindow::onDownloadControllerStatusChanged);
+            this, &MainWindow::enableActionsAccordingToDownloadStatus);
 
-    onDownloadsSelectionChanged();
+    enableActionsAccordingToDownloadSelection();
 }
 
 MainWindow *MainWindow::instance()
@@ -89,51 +106,19 @@ MainWindow::~MainWindow()
     settings.setValue(WINDOWGEOMETRY, saveGeometry());
     settings.setValue(WINDOWSTATE, saveState());
     settings.setValue(DOWNLOADSHEADERSTATE, ui->treeViewDownloads->header()->saveState());
+    settings.setValue(SERIESPAGESPLITTERSTATE, ui->splitter_2->saveState());
 
     delete ui;
 }
 
-bool MainWindow::isBusy() const
-{
-    return m_busy;
-}
-
-void MainWindow::setBusy(bool busy)
-{
-    if(busy == m_busy)
-        return;
-
-    m_busy = busy;
-    if(busy) {
-        m_movieBusy.start();
-        m_busyLabel->setVisible(true);
-    }
-    else {
-        m_movieBusy.stop();
-        m_busyLabel->setVisible(false);
-    }
-
-}
-
-void MainWindow::setStatusMessage(const QString &message)
-{
-    m_statusMessageLabel->setText(message);
-}
-
-void MainWindow::closeEvent(QCloseEvent *e)
-{
-    QMainWindow::closeEvent(e);
-//    setVisible(false);
-//    e->setAccepted(true);
-}
-
 void MainWindow::on_actionDownloads_triggered()
 {
-    ui->actionDownloads->setChecked(true);
-    ui->downloadsButton->setChecked(true);
-    ui->centralStackedWidget->setCurrentWidget(ui->downloadsPage);
+    ui->centralStackedWidget->setCurrentWidget(ui->pageDownloads);
+}
 
-    // TODO: disable other actions/buttons
+void MainWindow::on_actionTV_Shows_triggered()
+{
+    ui->centralStackedWidget->setCurrentWidget(ui->pageSeries);
 }
 
 void MainWindow::on_actionPreferences_triggered()
@@ -178,7 +163,7 @@ void MainWindow::on_actionStopDownloads_triggered()
     Controller::downloads()->stopDownloads();
 }
 
-void MainWindow::onDownloadControllerStatusChanged()
+void MainWindow::enableActionsAccordingToDownloadStatus()
 {
     bool running = Controller::downloads()->isDownloadRunning();
 
@@ -262,9 +247,10 @@ void MainWindow::on_actionResetDownload_triggered()
     }
 }
 
-void MainWindow::onDownloadsSelectionChanged()
+void MainWindow::enableActionsAccordingToDownloadSelection()
 {
-    bool sel = !ui->treeViewDownloads->selectionModel()->selectedRows().isEmpty();
+    bool sel = !ui->treeViewDownloads->selectionModel()->selectedRows().isEmpty()
+            && ui->centralStackedWidget->currentWidget() == ui->pageDownloads;
 
     ui->actionDeleteDownload->setEnabled(sel);
     ui->actionResetDownload->setEnabled(sel);
@@ -289,4 +275,48 @@ void MainWindow::on_actionExtract_triggered()
         if(package)
             Controller::extractor()->extractPackage(package);
     }
+}
+
+void MainWindow::on_actionAdd_show_triggered()
+{
+    ui->actionTV_Shows->trigger();
+
+    NewSeriesWizard wizard(this);
+    wizard.exec();
+}
+
+void MainWindow::showSeasonsForSelectedSeries()
+{
+    m_episodesModel->setSeason(nullptr);
+
+    QModelIndexList list = ui->treeViewSeries->selectionModel()->selectedRows();
+    if(list.isEmpty()) {
+        m_seasonsModel->setSeries(nullptr);
+        return;
+    }
+
+    Series *series = m_seriesModel->seriesByIndex(list.first());
+    if(!series) {
+        m_seasonsModel->setSeries(nullptr);
+        return;
+    }
+
+    m_seasonsModel->setSeries(series);
+}
+
+void MainWindow::showEpisodesForSelectedSeason()
+{
+    QModelIndexList list = ui->treeViewSeasons->selectionModel()->selectedRows();
+    if(list.isEmpty()) {
+        m_episodesModel->setSeason(nullptr);
+        return;
+    }
+
+    Season *season = m_seasonsModel->seasonByIndex(list.first());
+    if(!season) {
+        m_episodesModel->setSeason(nullptr);
+        return;
+    }
+
+    m_episodesModel->setSeason(season);
 }

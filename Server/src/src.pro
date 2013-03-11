@@ -19,8 +19,6 @@ include($$QSERIENJUNKIES_PATH/QSerienJunkies.pri)
 QUUNRAR_PATH = $$LIBPATH/QuunRar
 include($$QUUNRAR_PATH/QuunRar.pri)
 
-include(../../Model/Model.pri)
-
 ### General config ###
 
 TARGET          = MorQServer
@@ -73,7 +71,7 @@ INCLUDEPATH     += $$QUUNRAR_INCLUDEPATH
 HEADERS += \
     ui/mainwindow/mainwindow.h \
     controller/downloadcontroller.h \
-    model/downloadsitemmodel.h \
+    ui/mainwindow/model/downloadsitemmodel.h \
     controller/controller.h \
     ui/preferences/preferenceswindow.h \
     preferences.h \
@@ -85,12 +83,26 @@ HEADERS += \
     plugins/decrypter/decrypterplugin.h \
     plugins/decrypter/serienjunkiesdecrypterplugin.h \
     ui/mainwindow/downloadsitemdelegate.h \
-    controller/extractioncontroller.h
+    controller/extractioncontroller.h \
+    controller/seriescontroller.h \
+    ui/dialogs/newserieswizard.h \
+    plugins/downloadProviders/downloadproviderplugin.h \
+    plugins/downloadProviders/serienjunkiesproviderplugin.h \
+    ui/mainwindow/model/serieslistmodel.h \
+    ui/mainwindow/serieslistitemdelegate.h \
+    ui/mainwindow/model/seasonslistmodel.h \
+    model/download.h \
+    model/downloadpackage.h \
+    model/videodownloadlink.h \
+    model/episode.h \
+    model/season.h \
+    model/series.h \
+    ui/mainwindow/model/episodeslistmodel.h
 
 SOURCES += main.cpp \
     ui/mainwindow/mainwindow.cpp \
     controller/downloadcontroller.cpp \
-    model/downloadsitemmodel.cpp \
+    ui/mainwindow/model/downloadsitemmodel.cpp \
     controller/controller.cpp \
     ui/preferences/preferenceswindow.cpp \
     preferences.cpp \
@@ -102,11 +114,26 @@ SOURCES += main.cpp \
     plugins/decrypter/decrypterplugin.cpp \
     plugins/decrypter/serienjunkiesdecrypterplugin.cpp \
     ui/mainwindow/downloadsitemdelegate.cpp \
-    controller/extractioncontroller.cpp
+    controller/extractioncontroller.cpp \
+    controller/seriescontroller.cpp \
+    ui/dialogs/newserieswizard.cpp \
+    plugins/downloadProviders/downloadproviderplugin.cpp \
+    plugins/downloadProviders/serienjunkiesproviderplugin.cpp \
+    ui/mainwindow/model/serieslistmodel.cpp \
+    ui/mainwindow/serieslistitemdelegate.cpp \
+    ui/mainwindow/model/seasonslistmodel.cpp \
+    model/download.cpp \
+    model/downloadpackage.cpp \
+    model/videodownloadlink.cpp \
+    model/series.cpp \
+    model/episode.cpp \
+    model/season.cpp \
+    ui/mainwindow/model/episodeslistmodel.cpp
 
 FORMS += \
     ui/mainwindow/mainwindow.ui \
-    ui/preferences/preferenceswindow.ui
+    ui/preferences/preferenceswindow.ui \
+    ui/dialogs/newserieswizard.ui
 
 RESOURCES += \
     ui/resources/uiresources.qrc

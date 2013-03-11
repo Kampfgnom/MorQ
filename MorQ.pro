@@ -17,5 +17,3 @@ Server.subdir               =   Server
 Server.depends              =   QDataSuite \
                                 QSerienJunkies \
                                 QuunRar
-
-include(Model/Model.pri)

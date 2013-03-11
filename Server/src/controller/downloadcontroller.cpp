@@ -7,8 +7,8 @@
 #include "plugins/hoster/hosterplugin.h"
 #include "preferences.h"
 
-#include <download.h>
-#include <downloadpackage.h>
+#include "model/download.h"
+#include "model/downloadpackage.h"
 
 #include <QDir>
 

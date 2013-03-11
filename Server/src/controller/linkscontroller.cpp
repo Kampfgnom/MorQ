@@ -7,8 +7,8 @@
 #include "plugins/hoster/hosterplugin.h"
 #include "plugins/decrypter/decrypterplugin.h"
 
-#include <download.h>
-#include <downloadpackage.h>
+#include "model/download.h"
+#include "model/downloadpackage.h"
 
 #include <QApplication>
 #include <QClipboard>
