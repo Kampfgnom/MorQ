@@ -1,9 +1,9 @@
 [submodule "lib/QDataSuite"]
 	path = lib/QDataSuite
-	url = /Users/niklaswulf/Development/QDataSuite/QDataSuite
+	url = git@github.com:Kampfgnom/QDataSuite.git
 [submodule "lib/QSerienJunkies"]
 	path = lib/QSerienJunkies
-	url = /Users/niklaswulf/Development/QSerienJunkies/QSerienJunkies
+	url = git@github.com:Kampfgnom/QSerienJunkies.git
 [submodule "lib/QuunRar"]
 	path = lib/QuunRar
-	url = /Users/niklaswulf/Development/QuunRar/localRemote
+	url = git@github.com:Kampfgnom/QuunRar.git
